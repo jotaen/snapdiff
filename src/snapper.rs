@@ -3,6 +3,7 @@ use std::{fs, io, path, thread};
 use std::io::{BufRead};
 use crate::dir_iter::{DirIterator};
 use std::ops::{DerefMut};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::JoinHandle;
 use file::File;
 use crate::file;
@@ -16,12 +17,20 @@ pub struct Config {
 
 pub struct Snapper {
     config: Config,
+    ctrlc_arc: Arc<AtomicBool>,
 }
 
 impl Snapper {
     pub fn new(config: Config) -> Snapper {
+        let ctrlc_arc = Arc::new(AtomicBool::new(false));
+        let r = ctrlc_arc.clone();
+        ctrlc::set_handler(move || {
+            r.store(true, Ordering::SeqCst);
+        }).expect("Error setting Ctrl-C handler");
+
         return Snapper {
             config,
+            ctrlc_arc,
         }
     }
 
@@ -44,6 +53,7 @@ impl Snapper {
                 Arc::clone(&dir_it_arc),
                 Arc::clone(&snap_arc),
                 Arc::clone(&progress_arc),
+                Arc::clone(&self.ctrlc_arc),
                 root.to_path_buf(),
                 self.config.chunk_size,
             );
@@ -64,6 +74,7 @@ fn spawn_worker<S>(
     dir_it_mtx: Arc<Mutex<DirIterator>>,
     snap_mtx: Arc<Mutex<S>>,
     progress_mtx: Arc<Mutex<Progress>>,
+    ctrlc_mtx: Arc<AtomicBool>,
     root: path::PathBuf,
     chunk_size: usize,
 ) -> JoinHandle<()>
@@ -92,6 +103,10 @@ where S: Snapshot + std::fmt::Debug + Send + 'static
             let mut size_bytes: file::SizeBytes = 0;
             let mut checksum_context = md5::Context::new();
             loop {
+                if ctrlc_mtx.load(Ordering::SeqCst) {
+                    println!();
+                    std::process::exit(255);
+                }
                 let buffer = reader.fill_buf().expect("Failed to read file");
                 let length = buffer.len();
                 if length == 0 {
