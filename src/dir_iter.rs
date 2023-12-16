@@ -1,5 +1,6 @@
 use std::{fs, path};
 use std::cmp::Ordering;
+use crate::stats::Stats;
 
 pub struct DirIterator {
     small_file_threshold: u64,
@@ -15,7 +16,7 @@ impl DirIterator {
             large_files: PathList::new(),
             small_files: PathList::new(),
             scan_stats: ScanStats{
-                scheduled_files: 0,
+                scheduled_files: Stats::new(),
                 skipped_folders: 0,
                 skipped_files: 0,
             }
@@ -51,7 +52,7 @@ impl DirIterator {
             } else {
                 fs::metadata(&p).map(|m| {
                     let size = m.len();
-                    self.scan_stats.scheduled_files += 1;
+                    self.scan_stats.scheduled_files.record(size);
                     if size > self.small_file_threshold - 1 {
                         self.large_files.paths.push((p.to_path_buf(), size));
                     } else {
@@ -71,7 +72,7 @@ impl DirIterator {
 
 #[derive(Copy, Clone)]
 pub struct ScanStats {
-    pub scheduled_files: u64,
+    pub scheduled_files: Stats,
     pub skipped_folders: u64,
     pub skipped_files: u64,
 }

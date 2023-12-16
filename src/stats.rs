@@ -12,8 +12,12 @@ impl Stats {
         return Stats { files_count: 0, size: 0 };
     }
 
-    pub fn record(&mut self, f: &File) {
-        self.size += f.size_bytes;
+    pub fn record_file(&mut self, f: &File) {
+        self.record(f.size_bytes);
+    }
+
+    pub fn record(&mut self, s: SizeBytes) {
+        self.size += s;
         self.files_count += 1;
     }
 
@@ -81,7 +85,7 @@ mod tests {
     #[test]
     fn stats_records_file() {
         let mut r = Stats::new();
-        r.record(&file::from_strings("/tmp/x", "Foo"));
+        r.record_file(&file::from_strings("/tmp/x", "Foo"));
         assert_eq!(r.size(), 3);
         assert_eq!(r.files_count(), 1);
     }

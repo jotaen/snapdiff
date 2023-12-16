@@ -70,6 +70,11 @@ pub fn duration_human(seconds: u64) -> String {
     };
     return format!("{}{}{}", h, m, s);
 }
+
+pub fn percent(x: u64, base: u64) -> String {
+    return format!("{} %", 100 * x / base);
+}
+
 #[cfg(test)]
 mod tests {
     use crate::format;
@@ -118,5 +123,17 @@ mod tests {
         assert_eq!(format::duration_human(1*60*60+1), "1h 0m 1s");
         assert_eq!(format::duration_human(1*60*60+44*60), "1h 44m 0s");
         assert_eq!(format::duration_human(7*60*60+32*60+54), "7h 32m 54s");
+    }
+
+    #[test]
+    fn percent() {
+        assert_eq!(format::percent(0, 100), "0 %");
+        assert_eq!(format::percent(1, 100), "1 %");
+        assert_eq!(format::percent(50, 100), "50 %");
+        assert_eq!(format::percent(99, 100), "99 %");
+        assert_eq!(format::percent(100, 100), "100 %");
+        assert_eq!(format::percent(2, 101), "1 %");
+        assert_eq!(format::percent(50, 101), "49 %");
+        assert_eq!(format::percent(75, 50), "150 %");
     }
 }

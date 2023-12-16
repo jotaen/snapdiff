@@ -14,21 +14,21 @@ pub struct Config {
     pub chunk_size: usize,
 }
 
-pub struct FsScan {
+pub struct Snapper {
     config: Config,
 }
 
-impl FsScan {
-    pub fn new(config: Config) -> FsScan {
-        return FsScan{
+impl Snapper {
+    pub fn new(config: Config) -> Snapper {
+        return Snapper {
             config,
         }
     }
 
-    pub fn traverse<S>(&self, name: &'static str, root: &path::Path, snap: S) -> S
+    pub fn process<S>(&self, name: &'static str, root: &path::Path, snap: S) -> S
     where S: Snapshot + std::fmt::Debug + Send + 'static
     {
-        let progress = Progress::new(name);
+        let mut progress = Progress::new(name);
         progress.scan_start();
         let mut dir_it = DirIterator::new(self.config.chunk_size as u64);
         let s = dir_it.scan(root);

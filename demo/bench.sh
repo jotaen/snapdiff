@@ -15,6 +15,7 @@ rm -rf "${DIR_1}" "${DIR_2}"
 mkdir "${DIR_1}"
 pushd "${DIR_1}" > /dev/null
 {
+  rnd '0.blob' '6m'
   rnd '1.blob' '24m'
   rnd '2.blob' '48m'
   rnd '3.blob' '96m'

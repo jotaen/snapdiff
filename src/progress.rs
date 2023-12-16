@@ -3,16 +3,19 @@ use std::io::Write;
 use std::time::{Instant};
 use crate::dir_iter::ScanStats;
 use crate::file::SizeBytes;
-use crate::format::{dec, duration_human, size_human};
+use crate::format::{dec, duration_human, percent, size_human};
 use crate::format::term::*;
+use crate::stats::Stats;
 
 #[derive(Debug)]
 pub struct Progress {
     display_name: &'static str,
     initialised: Instant,
     last_trigger: Instant,
+    bytes_since_last_trigger: SizeBytes,
     files_count: u64,
     size: SizeBytes,
+    expect: Stats,
 }
 
 impl Progress {
@@ -22,8 +25,10 @@ impl Progress {
             display_name,
             initialised: init,
             last_trigger: init,
+            bytes_since_last_trigger: 0,
             files_count: 0,
             size: 0,
+            expect: Stats::new(),
         }
     }
 
@@ -32,10 +37,22 @@ impl Progress {
         io::stdout().flush().unwrap();
     }
 
-    pub fn scan_done(&self, s: ScanStats) {
+    pub fn scan_done(&mut self, s: ScanStats) {
+        self.expect = s.scheduled_files;
+        let file_count = dec(s.scheduled_files.files_count() as i128);
+        let skipped_info = if s.skipped_files > 0 || s.skipped_folders > 0 {
+            format!(
+                "   (skipped {} files, {} dirs)",
+                s.skipped_files, s.skipped_folders,
+            )
+        } else { "".to_string() };
         print!(
-            "{GRY} {} files scheduled (skipped {} files and {} folders){RST}\n",
-            s.scheduled_files, s.skipped_files, s.skipped_folders
+            "\r{GRY}{}:    Indexed:  {: >f$} files  {: >7}{}{RST}\n",
+            self.display_name,
+            file_count,
+            size_human(s.scheduled_files.size()),
+            skipped_info,
+            f = file_count.len(),
         );
         io::stdout().flush().unwrap();
     }
@@ -43,35 +60,36 @@ impl Progress {
     pub fn process_inc(&mut self, files_added: u64, bytes_added: SizeBytes) {
         self.files_count += files_added;
         self.size += bytes_added;
-        if self.initialised != self.last_trigger && self.last_trigger.elapsed().as_millis() < 500 {
+        self.bytes_since_last_trigger += bytes_added;
+        let elapsed_ms = self.last_trigger.elapsed().as_millis();
+        if self.initialised != self.last_trigger && elapsed_ms < 666 {
             return;
         }
-        self.print_progress(true);
+        let rate = if elapsed_ms != 0 {
+            let s = (1000 * self.bytes_since_last_trigger as u128 / elapsed_ms) as SizeBytes;
+            format!("[{: >7}/s]", size_human(s))
+        } else {"".to_string()};
+        self.print_process(rate);
         self.last_trigger = Instant::now();
+        self.bytes_since_last_trigger = 0;
     }
 
     pub fn process_done(&self) {
-        self.print_progress(false);
+        self.print_process("           ".to_string());
         print!("\n");
     }
 
-    fn print_progress(&self, is_ongoing: bool) {
-        let mut rate = "".to_string();
-        let elapsed_ms = self.initialised.elapsed().as_millis();
-        if !is_ongoing {
-            rate = "[Complete.]".to_string()
-        } else if elapsed_ms != 0 {
-            let s = (1000 * self.size as u128 / elapsed_ms) as SizeBytes;
-            rate = format!("[{: >7}/s]", size_human(s));
-        }
-        let indent = " ".repeat(self.display_name.len()+3);
+    fn print_process(&self, rate: String) {
+        let indent = " ".repeat(self.display_name.len()+2);
         print!(
-            "\r{}{GRY}Processing...   {: >3} files   {: >7}   {: >4}   {} {RST}",
+            "\r{}{GRY}Processing:  {: >f$} files  {: >7}   {: >5}  {: >4}   {}{RST} ",
             indent,
             dec(self.files_count as i128),
             size_human(self.size),
+            percent(self.size, self.expect.size()),
             duration_human(self.initialised.elapsed().as_secs()),
             rate,
+            f = dec(self.expect.files_count() as i128).len(),
         );
         io::stdout().flush().unwrap();
     }

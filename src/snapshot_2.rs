@@ -40,12 +40,12 @@ impl Snapshot2 {
         self.snap_2_remainder.retain(|checksum, fs| {
             if !snap_1_remainder.contains_key(checksum) {
                 for f1 in fs {
-                    result.added.record(&f1);
+                    result.added.record_file(&f1);
                 }
                 return true;
             }
             let f1 = snap_1_remainder.get_mut(checksum).unwrap().remove(0);
-            result.moved.record(&f1);
+            result.moved.record_file(&f1);
             if snap_1_remainder.get(checksum).unwrap().is_empty() {
                 snap_1_remainder.remove(checksum);
             }
@@ -54,7 +54,7 @@ impl Snapshot2 {
 
         for (_, fs) in snap_1_remainder {
             for f1 in fs {
-                result.deleted.record(&f1);
+                result.deleted.record_file(&f1);
             }
         }
 

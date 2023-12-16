@@ -13,7 +13,7 @@ pub struct Snapshot1 {
 
 impl Snapshot for Snapshot1 {
     fn add(&mut self, f1: File) {
-        self.result.total_snap_1.record(&f1);
+        self.result.total_snap_1.record_file(&f1);
         if self.files_by_path.contains_key(&f1.path) {
             panic!("Added duplicate file")
         }
@@ -34,11 +34,11 @@ impl Snapshot1 {
     }
 
     pub fn digest(&mut self, f2: &File) -> bool {
-        self.result.total_snap_2.record(&f2);
+        self.result.total_snap_2.record_file(&f2);
         let was_digested = self.files_by_path.get(&f2.path)
             .map(|f1| {
                 if f2.checksum == f1.checksum {
-                    self.result.identical.record(f2);
+                    self.result.identical.record_file(f2);
                     true
                 } else {
                     self.result.modified.record(f2, f1);
