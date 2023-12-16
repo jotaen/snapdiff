@@ -32,12 +32,12 @@ fn main() {
 
     let snap1 = {
         let snap1 = Snapshot1::new();
-        fs_scan.traverse("snap 1", root1, snap1)
+        fs_scan.traverse("Snap 1", root1, snap1)
     };
 
     let result = {
         let snap2 = Snapshot2::new(snap1);
-        fs_scan.traverse("snap 2", root2, snap2).conclude()
+        fs_scan.traverse("Snap 2", root2, snap2).conclude()
     };
 
     println!("{}", result.serialize());

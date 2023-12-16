@@ -29,9 +29,10 @@ impl FsScan {
     where S: Snapshot + std::fmt::Debug + Send + 'static
     {
         let progress = Progress::new(name);
-        progress.scan();
+        progress.scan_start();
         let mut dir_it = DirIterator::new(self.config.chunk_size as u64);
-        dir_it.scan(root);
+        let s = dir_it.scan(root);
+        progress.scan_done(s);
 
         let dir_it_arc = Arc::new(Mutex::new(dir_it));
         let snap_arc = Arc::new(Mutex::new(snap));
@@ -54,7 +55,7 @@ impl FsScan {
         }
 
         let snap = Arc::try_unwrap(snap_arc).unwrap().into_inner().unwrap();
-        Arc::try_unwrap(progress_arc).unwrap().into_inner().unwrap().done();
+        Arc::try_unwrap(progress_arc).unwrap().into_inner().unwrap().process_done();
         return snap;
     }
 }
@@ -71,7 +72,7 @@ where S: Snapshot + std::fmt::Debug + Send + 'static
     return thread::spawn(move || {
         {
             let mut p = progress_mtx.lock().unwrap();
-            p.increment(0, 0 as file::SizeBytes);
+            p.process_inc(0, 0 as file::SizeBytes);
         }
         loop {
             let p = {
@@ -101,7 +102,7 @@ where S: Snapshot + std::fmt::Debug + Send + 'static
                 reader.consume(length);
                 {
                     let mut p = progress_mtx.lock().unwrap();
-                    p.increment(0, length as file::SizeBytes);
+                    p.process_inc(0, length as file::SizeBytes);
                 }
             }
 
@@ -114,7 +115,7 @@ where S: Snapshot + std::fmt::Debug + Send + 'static
             }
             {
                 let mut p = progress_mtx.lock().unwrap();
-                p.increment(1, 0);
+                p.process_inc(1, 0);
             }
         }
     });
