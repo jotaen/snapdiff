@@ -1,0 +1,3 @@
+/target
+/sample/**
+!/sample/generate.sh

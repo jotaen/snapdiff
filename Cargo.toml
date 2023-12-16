@@ -1,0 +1,8 @@
+[package]
+name = "snapdiff"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+md5 = "0.7.0"
+walkdir = "2.4.0"
