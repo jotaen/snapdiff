@@ -1,5 +1,6 @@
 use crate::stats;
-use crate::util::dec_format;
+use crate::format::{dec};
+use crate::format::term::*;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Result {
@@ -28,64 +29,43 @@ impl Result {
     pub fn serialize(&self) -> String {
         let files = vec![
             "FILES".to_string(),
-            dec_format(self.total_snap_1.files_count() as i128),
-            dec_format(self.total_snap_2.files_count() as i128),
-            dec_format(self.identical.files_count() as i128),
-            dec_format(self.moved.files_count() as i128),
-            dec_format(self.added.files_count() as i128),
-            dec_format(self.deleted.files_count() as i128),
-            dec_format(self.modified.files_count() as i128),
+            dec(self.total_snap_1.files_count() as i128),
+            dec(self.total_snap_2.files_count() as i128),
+            dec(self.identical.files_count() as i128),
+            dec(self.moved.files_count() as i128),
+            dec(self.added.files_count() as i128),
+            dec(self.deleted.files_count() as i128),
+            dec(self.modified.files_count() as i128),
         ];
         let size = vec![
             "BYTES".to_string(),
-            dec_format(self.total_snap_1.size() as i128),
-            dec_format(self.total_snap_2.size() as i128),
-            dec_format(self.identical.size() as i128),
-            dec_format(self.moved.size() as i128),
-            dec_format(self.added.size() as i128),
-            dec_format(self.deleted.size() as i128),
-            dec_format(self.modified.diff()),
+            dec(self.total_snap_1.size() as i128),
+            dec(self.total_snap_2.size() as i128),
+            dec(self.identical.size() as i128),
+            dec(self.moved.size() as i128),
+            format!("+{}", dec(self.added.size() as i128)),
+            format!("-{}", dec(self.deleted.size() as i128)),
+            dec(self.modified.diff()),
         ];
         let longest_size = size.iter().map(|s| {s.len()}).max().unwrap();
         let longest_file_count = files.iter().map(|s| {s.len()}).max().unwrap();
         return format!("
-                        {: >f$}     {: >b$}
+{BLD}            {___}{___}            {: >f$}     {: >b$}{RST}
 
-TOTAL       Before      {: >f$}     {: >b$}
-            After       {: >f$}     {: >b$}
+{BLD}TOTAL       {RST}{LGT}Snap 1      {: >f$}     {: >b$}{RST}
+{BLD}            {RST}{LGT}Snap 2      {: >f$}     {: >b$}{RST}
 
-OF WHICH    Identical   {: >f$}     {: >b$}
-            Moved       {: >f$}     {: >b$}
-            Added       {: >f$}     {: >b$}
-            Deleted     {: >f$}     {: >b$}
-            Modified    {: >f$}     {: >b$} (+{} / -{})
+{BLD}OF WHICH    {RST}{BLU}Identical   {: >f$}     {: >b$}{RST}
+{BLD}            {RST}{BLU}Moved       {: >f$}     {: >b$}{RST}
+{BLD}            {RST}{GRN}Added       {: >f$}     {: >b$}{RST}
+{BLD}            {RST}{RED}Deleted     {: >f$}     {: >b$}{RST}
+{BLD}            {RST}{YLW}Modified    {: >f$}     {: >b$} (+{} / -{}){RST}
 ",
                        files[0], size[0], files[1], size[1], files[2], size[2],
                        files[3], size[3], files[4], size[4], files[5], size[5],
                        files[6], size[6], files[7], size[7],
-                       dec_format(self.modified.gain() as i128), dec_format(self.modified.loss() as i128),
+                       dec(self.modified.gain() as i128), dec(self.modified.loss() as i128),
                        b = longest_size, f = longest_file_count,
         );
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::result;
-
-    #[test]
-    fn dec_format() {
-        assert_eq!(result::dec_format(-123_456_789), "-123.456.789");
-        assert_eq!(result::dec_format(-12_345), "-12.345");
-        assert_eq!(result::dec_format(-1), "-1");
-        assert_eq!(result::dec_format(0), "0");
-        assert_eq!(result::dec_format(1), "1");
-        assert_eq!(result::dec_format(543), "543");
-        assert_eq!(result::dec_format(987), "987");
-        assert_eq!(result::dec_format(1_234), "1.234");
-        assert_eq!(result::dec_format(9_876), "9.876");
-        assert_eq!(result::dec_format(12_345), "12.345");
-        assert_eq!(result::dec_format(98_765), "98.765");
-        assert_eq!(result::dec_format(123_456_789), "123.456.789");
     }
 }

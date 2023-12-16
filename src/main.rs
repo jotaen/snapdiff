@@ -7,7 +7,7 @@ mod snapshot_2;
 mod result;
 mod snapshot;
 mod progress;
-mod util;
+mod format;
 
 use std::{env, path};
 use std::process;
@@ -27,17 +27,17 @@ fn main() {
     let root2 = path::Path::new(&args[2]);
     let fs_scan = FsScan::new(Config{
         worker: available_parallelism().unwrap().get(),
-        chunk_size: 1024 * 512,
+        chunk_size: 1024 * 1024 * 10, // ~10MB
     });
 
     let snap1 = {
         let snap1 = Snapshot1::new();
-        fs_scan.traverse("snapshot 1", root1, snap1)
+        fs_scan.traverse("snap 1", root1, snap1)
     };
 
     let result = {
         let snap2 = Snapshot2::new(snap1);
-        fs_scan.traverse("snapshot 2", root2, snap2).conclude()
+        fs_scan.traverse("snap 2", root2, snap2).conclude()
     };
 
     println!("{}", result.serialize());

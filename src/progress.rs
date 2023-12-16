@@ -1,46 +1,67 @@
 use std::io;
 use std::io::Write;
-use std::time::SystemTime;
-use stats::Stats;
-use crate::{stats};
-use crate::util::dec_format;
+use std::time::{Instant};
+use crate::file::SizeBytes;
+use crate::format::{dec, duration_human, size_human};
+use crate::format::term::*;
 
 #[derive(Debug)]
 pub struct Progress {
     prefix: &'static str,
-    initialised: SystemTime,
-    last_trigger: SystemTime,
+    initialised: Instant,
+    last_trigger: Instant,
+    files_count: u64,
+    size: SizeBytes,
 }
 
 impl Progress {
     pub fn new(prefix: &'static str) -> Progress {
+        let init = Instant::now();
         return Progress{
             prefix,
-            initialised: SystemTime::now(),
-            last_trigger: SystemTime::now(),
+            initialised: init,
+            last_trigger: init,
+            files_count: 0,
+            size: 0,
         }
     }
 
-    pub fn update(&mut self, s: Stats) {
-        if self.last_trigger.elapsed().unwrap().as_millis() < 800 {
+    pub fn scan(&self) {
+        print!("Scanning {}...", self.prefix);
+        io::stdout().flush().unwrap();
+    }
+
+    pub fn increment(&mut self, files_added: u64, bytes_added: SizeBytes) {
+        self.files_count += files_added;
+        self.size += bytes_added;
+        if self.initialised != self.last_trigger && self.last_trigger.elapsed().as_millis() < 500 {
             return;
         }
-        self.last_trigger = SystemTime::now();
-        self.print(s);
+        self.print(true);
+        self.last_trigger = Instant::now();
     }
 
-    pub fn done(&mut self, s: Stats) {
-        self.print(s);
-        print!("  Done.\n");
+    pub fn done(&self) {
+        self.print(false);
+        print!("\n");
     }
 
-    fn print(&mut self, s: Stats) {
+    fn print(&self, is_ongoing: bool) {
+        let mut rate = "".to_string();
+        let elapsed_ms = self.initialised.elapsed().as_millis();
+        if !is_ongoing {
+            rate = "[Complete.]".to_string()
+        } else if elapsed_ms != 0 {
+            let s = (1000 * self.size as u128 / elapsed_ms) as SizeBytes;
+            rate = format!("[{: >7}/s]", size_human(s));
+        }
         print!(
-            "\rProcessing {}: {} files, {} bytes ({}s)",
+            "\r{GRY}Processing {}:   {: >3} files   {: >7}   {: >4}   {} {RST}",
             self.prefix,
-            dec_format(s.files_count() as i128),
-            dec_format(s.size() as i128),
-            self.initialised.elapsed().unwrap().as_secs()
+            dec(self.files_count as i128),
+            size_human(self.size),
+            duration_human(self.initialised.elapsed().as_secs()),
+            rate,
         );
         io::stdout().flush().unwrap();
     }
