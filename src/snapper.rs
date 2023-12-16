@@ -1,14 +1,14 @@
-use std::sync::{Arc, Mutex};
-use std::{fs, io, path, thread};
-use std::io::{BufRead};
-use crate::dir_iter::{DirIterator};
-use std::ops::{DerefMut};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::thread::JoinHandle;
-use file::File;
+use crate::dir_iter::DirIterator;
 use crate::file;
 use crate::progress::Progress;
 use crate::snapshot::Snapshot;
+use file::File;
+use std::io::BufRead;
+use std::ops::DerefMut;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use std::thread::JoinHandle;
+use std::{fs, io, path, thread};
 
 pub struct Config {
     pub worker: usize,
@@ -26,16 +26,15 @@ impl Snapper {
         let r = ctrlc_arc.clone();
         ctrlc::set_handler(move || {
             r.store(true, Ordering::SeqCst);
-        }).expect("Error setting Ctrl-C handler");
+        })
+        .expect("Error setting Ctrl-C handler");
 
-        return Snapper {
-            config,
-            ctrlc_arc,
-        }
+        return Snapper { config, ctrlc_arc };
     }
 
     pub fn process<S>(&self, name: &'static str, root: &path::Path, snap: S) -> S
-    where S: Snapshot + std::fmt::Debug + Send + 'static
+    where
+        S: Snapshot + std::fmt::Debug + Send + 'static,
     {
         let mut progress = Progress::new(name);
         progress.scan_start();
@@ -65,7 +64,11 @@ impl Snapper {
         }
 
         let snap = Arc::try_unwrap(snap_arc).unwrap().into_inner().unwrap();
-        Arc::try_unwrap(progress_arc).unwrap().into_inner().unwrap().process_done();
+        Arc::try_unwrap(progress_arc)
+            .unwrap()
+            .into_inner()
+            .unwrap()
+            .process_done();
         return snap;
     }
 }
@@ -78,7 +81,8 @@ fn spawn_worker<S>(
     root: path::PathBuf,
     chunk_size: usize,
 ) -> JoinHandle<()>
-where S: Snapshot + std::fmt::Debug + Send + 'static
+where
+    S: Snapshot + std::fmt::Debug + Send + 'static,
 {
     return thread::spawn(move || {
         {
@@ -98,7 +102,9 @@ where S: Snapshot + std::fmt::Debug + Send + 'static
             };
 
             let disk_file = fs::File::options()
-                .read(true).open(&p).expect("Failed to open file");
+                .read(true)
+                .open(&p)
+                .expect("Failed to open file");
             let mut reader = io::BufReader::with_capacity(chunk_size, disk_file);
             let mut size_bytes: file::SizeBytes = 0;
             let mut checksum_context = md5::Context::new();

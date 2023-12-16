@@ -1,5 +1,5 @@
-use file::{File, SizeBytes};
 use crate::file;
+use file::{File, SizeBytes};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Stats {
@@ -9,7 +9,10 @@ pub struct Stats {
 
 impl Stats {
     pub fn new() -> Stats {
-        return Stats { files_count: 0, size: 0 };
+        return Stats {
+            files_count: 0,
+            size: 0,
+        };
     }
 
     pub fn record_file(&mut self, f: &File) {
@@ -39,7 +42,11 @@ pub struct StatsDelta {
 
 impl StatsDelta {
     pub fn new() -> StatsDelta {
-        return StatsDelta { files_count: 0, gain: 0, loss: 0 };
+        return StatsDelta {
+            files_count: 0,
+            gain: 0,
+            loss: 0,
+        };
     }
 
     pub fn record(&mut self, f1: &File, f2: &File) {
@@ -71,9 +78,9 @@ impl StatsDelta {
 
 #[cfg(test)]
 mod tests {
-    use stats::Stats;
-    use crate::stats;
     use crate::file;
+    use crate::stats;
+    use stats::Stats;
 
     #[test]
     fn new_stats_is_empty() {

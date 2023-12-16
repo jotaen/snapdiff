@@ -1,6 +1,6 @@
-use std::{fs, path};
-use std::cmp::Ordering;
 use crate::stats::Stats;
+use std::cmp::Ordering;
+use std::{fs, path};
 
 pub struct DirIterator {
     small_file_threshold: u64,
@@ -11,16 +11,16 @@ pub struct DirIterator {
 
 impl DirIterator {
     pub fn new(small_file_threshold: u64) -> DirIterator {
-        return DirIterator{
+        return DirIterator {
             small_file_threshold,
             large_files: PathList::new(),
             small_files: PathList::new(),
-            scan_stats: ScanStats{
+            scan_stats: ScanStats {
                 scheduled_files: Stats::new(),
                 skipped_folders: 0,
                 skipped_files: 0,
-            }
-        }
+            },
+        };
     }
 
     pub fn scan(&mut self, root: &path::Path) -> ScanStats {
@@ -32,7 +32,7 @@ impl DirIterator {
                 Ordering::Greater
             } else {
                 Ordering::Equal
-            }
+            };
         });
         return self.scan_stats;
     }
@@ -50,17 +50,19 @@ impl DirIterator {
             if p.is_dir() {
                 self.scan_dir(&p);
             } else {
-                fs::metadata(&p).map(|m| {
-                    let size = m.len();
-                    self.scan_stats.scheduled_files.record(size);
-                    if size > self.small_file_threshold - 1 {
-                        self.large_files.paths.push((p.to_path_buf(), size));
-                    } else {
-                        self.small_files.paths.push((p.to_path_buf(), size));
-                    }
-                }).unwrap_or_else(|_| {
-                    self.scan_stats.skipped_files += 1;
-                });
+                fs::metadata(&p)
+                    .map(|m| {
+                        let size = m.len();
+                        self.scan_stats.scheduled_files.record(size);
+                        if size > self.small_file_threshold - 1 {
+                            self.large_files.paths.push((p.to_path_buf(), size));
+                        } else {
+                            self.small_files.paths.push((p.to_path_buf(), size));
+                        }
+                    })
+                    .unwrap_or_else(|_| {
+                        self.scan_stats.skipped_files += 1;
+                    });
             }
         }
     }
@@ -84,10 +86,10 @@ struct PathList {
 
 impl PathList {
     fn new() -> PathList {
-        return PathList{
+        return PathList {
             paths: vec![],
             it: 0,
-        }
+        };
     }
 
     fn next(&mut self) -> Option<path::PathBuf> {

@@ -1,11 +1,11 @@
-use std::io;
-use std::io::Write;
-use std::time::{Instant};
 use crate::dir_iter::ScanStats;
 use crate::file::SizeBytes;
-use crate::format::{dec, duration_human, percent, size_human};
 use crate::format::term::*;
+use crate::format::{dec, duration_human, percent, size_human};
 use crate::stats::Stats;
+use std::io;
+use std::io::Write;
+use std::time::Instant;
 
 #[derive(Debug)]
 pub struct Progress {
@@ -21,7 +21,7 @@ pub struct Progress {
 impl Progress {
     pub fn new(display_name: &'static str) -> Progress {
         let init = Instant::now();
-        return Progress{
+        return Progress {
             display_name,
             initialised: init,
             last_trigger: init,
@@ -29,7 +29,7 @@ impl Progress {
             files_count: 0,
             size: 0,
             expect: Stats::new(),
-        }
+        };
     }
 
     pub fn scan_start(&self) {
@@ -45,7 +45,9 @@ impl Progress {
                 "   (skipped {} files, {} dirs)",
                 s.skipped_files, s.skipped_folders,
             )
-        } else { "".to_string() };
+        } else {
+            "".to_string()
+        };
         print!(
             "\r{GRY}{}:    Indexed:  {: >f$} files  {: >7}{}{RST}\n",
             self.display_name,
@@ -68,7 +70,9 @@ impl Progress {
         let rate = if elapsed_ms != 0 {
             let s = (1000 * self.bytes_since_last_trigger as u128 / elapsed_ms) as SizeBytes;
             format!("[{: >7}/s]", size_human(s))
-        } else {"".to_string()};
+        } else {
+            "".to_string()
+        };
         self.print_process(rate);
         self.last_trigger = Instant::now();
         self.bytes_since_last_trigger = 0;
@@ -80,7 +84,7 @@ impl Progress {
     }
 
     fn print_process(&self, rate: String) {
-        let indent = " ".repeat(self.display_name.len()+2);
+        let indent = " ".repeat(self.display_name.len() + 2);
         print!(
             "\r{}{GRY}Processing:  {: >f$} files  {: >7}   {: >5}  {: >4}   {}{RST} ",
             indent,

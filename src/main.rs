@@ -1,20 +1,20 @@
-mod file;
-mod stats;
-mod snapshot_1;
 mod dir_iter;
-mod snapper;
-mod snapshot_2;
-mod result;
-mod snapshot;
-mod progress;
+mod file;
 mod format;
+mod progress;
+mod result;
+mod snapper;
+mod snapshot;
+mod snapshot_1;
+mod snapshot_2;
+mod stats;
 
-use std::{env, path};
-use std::process;
-use std::thread::available_parallelism;
 use crate::snapper::{Config, Snapper};
 use crate::snapshot_1::Snapshot1;
 use crate::snapshot_2::Snapshot2;
+use std::process;
+use std::thread::available_parallelism;
+use std::{env, path};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -25,7 +25,7 @@ fn main() {
 
     let root1 = path::Path::new(&args[1]);
     let root2 = path::Path::new(&args[2]);
-    let snapper = Snapper::new(Config{
+    let snapper = Snapper::new(Config {
         worker: available_parallelism().unwrap().get(),
         chunk_size: 1024 * 1024 * 10, // ~10MB
     });

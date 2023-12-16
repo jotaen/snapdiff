@@ -18,6 +18,10 @@ run::demo() {
   run::cli "demo/${which}1" "demo/${which}2"
 }
 
+run::format() {
+  rustfmt src/**
+}
+
 run::demo-generate() {
   local which="$1"
   assert-demo "${which}"

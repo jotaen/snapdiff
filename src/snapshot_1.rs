@@ -1,9 +1,9 @@
-use std::collections::{HashMap};
-use std::path;
-use file::File;
-use crate::{file, result, stats};
-use crate::file::{ContentsHash};
+use crate::file::ContentsHash;
 use crate::snapshot::Snapshot;
+use crate::{file, result, stats};
+use file::File;
+use std::collections::HashMap;
+use std::path;
 
 #[derive(Debug)]
 pub struct Snapshot1 {
@@ -35,7 +35,9 @@ impl Snapshot1 {
 
     pub fn digest(&mut self, f2: &File) -> bool {
         self.result.total_snap_2.record_file(&f2);
-        let was_digested = self.files_by_path.get(&f2.path)
+        let was_digested = self
+            .files_by_path
+            .get(&f2.path)
             .map(|f1| {
                 if f2.checksum == f1.checksum {
                     self.result.identical.record_file(f2);
@@ -44,7 +46,8 @@ impl Snapshot1 {
                     self.result.modified.record(f2, f1);
                     true
                 }
-            }).unwrap_or(false);
+            })
+            .unwrap_or(false);
         if was_digested != false {
             self.files_by_path.remove(&f2.path);
         }

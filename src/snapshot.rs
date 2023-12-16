@@ -7,10 +7,10 @@ pub trait Snapshot {
 
 #[cfg(test)]
 mod tests {
+    use crate::snapshot::Snapshot;
+    use crate::{file, snapshot_1, snapshot_2};
     use snapshot_1::Snapshot1;
     use snapshot_2::Snapshot2;
-    use crate::{snapshot_1, snapshot_2, file};
-    use crate::snapshot::Snapshot;
 
     #[test]
     fn test_identical_files() {

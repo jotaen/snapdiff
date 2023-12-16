@@ -1,9 +1,9 @@
-use std::collections::{HashMap};
-use file::File;
-use snapshot_1::Snapshot1;
-use crate::{file, result, snapshot_1, stats};
 use crate::file::ContentsHash;
 use crate::snapshot::Snapshot;
+use crate::{file, result, snapshot_1, stats};
+use file::File;
+use snapshot_1::Snapshot1;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Snapshot2 {
@@ -18,7 +18,10 @@ impl Snapshot for Snapshot2 {
             if !self.snap_2_remainder.contains_key(&f2.checksum) {
                 self.snap_2_remainder.insert(f2.checksum, vec![]);
             }
-            self.snap_2_remainder.get_mut(&f2.checksum).unwrap().push(f2);
+            self.snap_2_remainder
+                .get_mut(&f2.checksum)
+                .unwrap()
+                .push(f2);
         }
     }
 

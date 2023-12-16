@@ -20,11 +20,11 @@ pub fn dec(x: i128) -> String {
         if i < 1000 {
             return format!("{i}");
         }
-        return format!("{}{}{:03}", d(s, i/1000), DECIMAL_SEPARATOR, i%1000);
+        return format!("{}{}{:03}", d(s, i / 1000), DECIMAL_SEPARATOR, i % 1000);
     }
     let res = d("".to_string(), x.abs());
     if x < 0 {
-        return format!("-{res}")
+        return format!("-{res}");
     }
     return res;
 }
@@ -37,7 +37,7 @@ pub fn size_human(x: SizeBytes) -> String {
         if mantissa < 1000 {
             break;
         }
-        decimal = (mantissa/100) % 10;
+        decimal = (mantissa / 100) % 10;
         mantissa = mantissa / 1000;
         suffix = s;
     }
@@ -45,26 +45,21 @@ pub fn size_human(x: SizeBytes) -> String {
     if x >= 1000 {
         decimal_suffix = format!("{}{}", THOUSANDS_SEPARATOR, decimal)
     }
-    return format!(
-        "{}{}{}",
-        dec(mantissa as i128),
-        decimal_suffix,
-        suffix,
-    );
+    return format!("{}{}{}", dec(mantissa as i128), decimal_suffix, suffix,);
 }
 
 pub fn duration_human(seconds: u64) -> String {
     if seconds == 0 {
         return "0s".to_string();
     }
-    let s = format!("{}s", seconds%60);
+    let s = format!("{}s", seconds % 60);
     let m = if seconds >= 60 {
-        format!("{}m ", seconds/60%60)
+        format!("{}m ", seconds / 60 % 60)
     } else {
         "".to_string()
     };
-    let h = if seconds >= 60*60 {
-        format!("{}h ", seconds/60/60)
+    let h = if seconds >= 60 * 60 {
+        format!("{}h ", seconds / 60 / 60)
     } else {
         "".to_string()
     };
@@ -116,13 +111,16 @@ mod tests {
         assert_eq!(format::duration_human(59), "59s");
         assert_eq!(format::duration_human(60), "1m 0s");
         assert_eq!(format::duration_human(61), "1m 1s");
-        assert_eq!(format::duration_human(34*60), "34m 0s");
-        assert_eq!(format::duration_human(34*60+12), "34m 12s");
-        assert_eq!(format::duration_human(59*60+59), "59m 59s");
-        assert_eq!(format::duration_human(60*60), "1h 0m 0s");
-        assert_eq!(format::duration_human(1*60*60+1), "1h 0m 1s");
-        assert_eq!(format::duration_human(1*60*60+44*60), "1h 44m 0s");
-        assert_eq!(format::duration_human(7*60*60+32*60+54), "7h 32m 54s");
+        assert_eq!(format::duration_human(34 * 60), "34m 0s");
+        assert_eq!(format::duration_human(34 * 60 + 12), "34m 12s");
+        assert_eq!(format::duration_human(59 * 60 + 59), "59m 59s");
+        assert_eq!(format::duration_human(60 * 60), "1h 0m 0s");
+        assert_eq!(format::duration_human(1 * 60 * 60 + 1), "1h 0m 1s");
+        assert_eq!(format::duration_human(1 * 60 * 60 + 44 * 60), "1h 44m 0s");
+        assert_eq!(
+            format::duration_human(7 * 60 * 60 + 32 * 60 + 54),
+            "7h 32m 54s"
+        );
     }
 
     #[test]

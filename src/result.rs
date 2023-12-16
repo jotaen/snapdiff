@@ -1,6 +1,6 @@
-use crate::stats;
-use crate::format::{dec};
+use crate::format::dec;
 use crate::format::term::*;
+use crate::stats;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Result {
@@ -23,7 +23,7 @@ impl Result {
             added: stats::Stats::new(),
             deleted: stats::Stats::new(),
             modified: stats::StatsDelta::new(),
-        }
+        };
     }
 
     pub fn serialize(&self) -> String {
@@ -47,9 +47,10 @@ impl Result {
             format!("-{}", dec(self.deleted.size() as i128)),
             dec(self.modified.diff()),
         ];
-        let longest_size = size.iter().map(|s| {s.len()}).max().unwrap();
-        let longest_file_count = files.iter().map(|s| {s.len()}).max().unwrap();
-        return format!("
+        let longest_size = size.iter().map(|s| s.len()).max().unwrap();
+        let longest_file_count = files.iter().map(|s| s.len()).max().unwrap();
+        return format!(
+            "
 {BLD}            {___}{___}            {: >f$}     {: >b$}{RST}
 
 {BLD}TOTAL       {RST}{LGT}Snap 1      {: >f$}     {: >b$}{RST}
@@ -61,11 +62,26 @@ impl Result {
 {BLD}            {RST}{RED}Deleted     {: >f$}     {: >b$}{RST}
 {BLD}            {RST}{YLW}Modified    {: >f$}     {: >b$} (+{} / -{}){RST}
 ",
-                       files[0], size[0], files[1], size[1], files[2], size[2],
-                       files[3], size[3], files[4], size[4], files[5], size[5],
-                       files[6], size[6], files[7], size[7],
-                       dec(self.modified.gain() as i128), dec(self.modified.loss() as i128),
-                       b = longest_size, f = longest_file_count,
+            files[0],
+            size[0],
+            files[1],
+            size[1],
+            files[2],
+            size[2],
+            files[3],
+            size[3],
+            files[4],
+            size[4],
+            files[5],
+            size[5],
+            files[6],
+            size[6],
+            files[7],
+            size[7],
+            dec(self.modified.gain() as i128),
+            dec(self.modified.loss() as i128),
+            b = longest_size,
+            f = longest_file_count,
         );
     }
 }
