@@ -6,20 +6,21 @@ pub trait Snapshot {
 
 #[cfg(test)]
 mod tests {
+    use crate::file::File;
     use crate::snapshot::Snapshot;
-    use crate::{file, snapshot_1, snapshot_2};
+    use crate::{snapshot_1, snapshot_2};
     use snapshot_1::Snapshot1;
     use snapshot_2::Snapshot2;
 
     #[test]
     fn test_identical_files() {
         let mut s1 = Snapshot1::new();
-        s1.add(file::from_strings("/identical-1", "identical-1"));
-        s1.add(file::from_strings("/identical-2", "identical-2"));
+        s1.add(File::from_strings("/identical-1", "identical-1"));
+        s1.add(File::from_strings("/identical-2", "identical-2"));
 
         let mut s2 = Snapshot2::new(s1);
-        s2.add(file::from_strings("/identical-1", "identical-1"));
-        s2.add(file::from_strings("/identical-2", "identical-2"));
+        s2.add(File::from_strings("/identical-1", "identical-1"));
+        s2.add(File::from_strings("/identical-2", "identical-2"));
 
         let res = s2.conclude();
         assert_eq!(res.identical.files_count(), 2);
@@ -33,12 +34,12 @@ mod tests {
     #[test]
     fn test_modified_files() {
         let mut s1 = Snapshot1::new();
-        s1.add(file::from_strings("/modified-1", "modified-1"));
-        s1.add(file::from_strings("/modified-2", "modified-2"));
+        s1.add(File::from_strings("/modified-1", "modified-1"));
+        s1.add(File::from_strings("/modified-2", "modified-2"));
 
         let mut s2 = Snapshot2::new(s1);
-        s2.add(file::from_strings("/modified-1", "modif"));
-        s2.add(file::from_strings("/modified-2", "modified-2222"));
+        s2.add(File::from_strings("/modified-1", "modif"));
+        s2.add(File::from_strings("/modified-2", "modified-2222"));
 
         let res = s2.conclude();
         assert_eq!(res.modified_snap_1.files_count(), 2);
@@ -52,12 +53,12 @@ mod tests {
     #[test]
     fn test_moved_files() {
         let mut s1 = Snapshot1::new();
-        s1.add(file::from_strings("/moved-1", "moved-1"));
-        s1.add(file::from_strings("/moved-2", "moved-2"));
+        s1.add(File::from_strings("/moved-1", "moved-1"));
+        s1.add(File::from_strings("/moved-2", "moved-2"));
 
         let mut s2 = Snapshot2::new(s1);
-        s2.add(file::from_strings("/moved-1111", "moved-1"));
-        s2.add(file::from_strings("/moved-2222", "moved-2"));
+        s2.add(File::from_strings("/moved-1111", "moved-1"));
+        s2.add(File::from_strings("/moved-2222", "moved-2"));
 
         let res = s2.conclude();
         assert_eq!(res.moved.files_count(), 2);
@@ -70,8 +71,8 @@ mod tests {
         let s1 = Snapshot1::new();
 
         let mut s2 = Snapshot2::new(s1);
-        s2.add(file::from_strings("/added-1", "added"));
-        s2.add(file::from_strings("/added-2", "added"));
+        s2.add(File::from_strings("/added-1", "added"));
+        s2.add(File::from_strings("/added-2", "added"));
 
         let res = s2.conclude();
         assert_eq!(res.added.files_count(), 2);
@@ -82,8 +83,8 @@ mod tests {
     #[test]
     fn test_deleted_files() {
         let mut s1 = Snapshot1::new();
-        s1.add(file::from_strings("/deleted-1", "deleted-1"));
-        s1.add(file::from_strings("/deleted-2", "deleted-2"));
+        s1.add(File::from_strings("/deleted-1", "deleted-1"));
+        s1.add(File::from_strings("/deleted-2", "deleted-2"));
 
         let mut s2 = Snapshot2::new(s1);
 
@@ -96,17 +97,17 @@ mod tests {
     #[test]
     fn test_compare_file() {
         let mut s1 = Snapshot1::new();
-        s1.add(file::from_strings("/identical", "identical"));
-        s1.add(file::from_strings("/modified", "modified"));
-        s1.add(file::from_strings("/moved-1", "moved"));
-        s1.add(file::from_strings("/deleted", "deleted"));
+        s1.add(File::from_strings("/identical", "identical"));
+        s1.add(File::from_strings("/modified", "modified"));
+        s1.add(File::from_strings("/moved-1", "moved"));
+        s1.add(File::from_strings("/deleted", "deleted"));
 
         let mut s2 = Snapshot2::new(s1);
 
-        s2.add(file::from_strings("/identical", "identical"));
-        s2.add(file::from_strings("/modified", "MODIFIED"));
-        s2.add(file::from_strings("/moved-2", "moved"));
-        s2.add(file::from_strings("/added", "added"));
+        s2.add(File::from_strings("/identical", "identical"));
+        s2.add(File::from_strings("/modified", "MODIFIED"));
+        s2.add(File::from_strings("/moved-2", "moved"));
+        s2.add(File::from_strings("/added", "added"));
 
         let res = s2.conclude();
         assert_eq!(res.identical.files_count(), 1);
@@ -122,12 +123,12 @@ mod tests {
     #[test]
     fn test_moved_and_identical_files() {
         let mut s1 = Snapshot1::new();
-        s1.add(file::from_strings("/b", "1"));
-        s1.add(file::from_strings("/c", "1"));
+        s1.add(File::from_strings("/b", "1"));
+        s1.add(File::from_strings("/c", "1"));
 
         let mut s2 = Snapshot2::new(s1);
-        s2.add(file::from_strings("/a", "1"));
-        s2.add(file::from_strings("/b", "1"));
+        s2.add(File::from_strings("/a", "1"));
+        s2.add(File::from_strings("/b", "1"));
 
         let res = s2.conclude();
         assert_eq!(res.moved.files_count(), 1);

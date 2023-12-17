@@ -1,3 +1,4 @@
+mod checksum;
 mod cli;
 mod dir_iter;
 mod error;
@@ -44,7 +45,7 @@ fn run() -> Result<(), Error> {
         snapper2.process(dir_it2, snap2)?.conclude()
     };
 
-    println!("{}", report.serialize());
+    println!("{}", report.summary());
     return Ok(());
 }
 

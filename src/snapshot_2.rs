@@ -1,4 +1,4 @@
-use crate::file::ContentsHash;
+use crate::checksum::CheckSum;
 use crate::snapshot::Snapshot;
 use crate::snapshot_1::Comparison;
 use crate::{file, report, snapshot_1};
@@ -10,7 +10,7 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub struct Snapshot2 {
     snap_1: Snapshot1,
-    snap_2_remainder: HashMap<ContentsHash, Vec<File>>,
+    snap_2_remainder: HashMap<CheckSum, Vec<File>>,
     result: Report,
 }
 
@@ -29,11 +29,11 @@ impl Snapshot for Snapshot2 {
                 }
             })
             .unwrap_or_else(|| {
-                if !self.snap_2_remainder.contains_key(&f2.checksum) {
-                    self.snap_2_remainder.insert(f2.checksum, vec![]);
+                if !self.snap_2_remainder.contains_key(&f2.check_sum) {
+                    self.snap_2_remainder.insert(f2.check_sum, vec![]);
                 }
                 self.snap_2_remainder
-                    .get_mut(&f2.checksum)
+                    .get_mut(&f2.check_sum)
                     .unwrap()
                     .push(f2);
             });

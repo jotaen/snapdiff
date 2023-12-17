@@ -1,4 +1,4 @@
-use crate::file::ContentsHash;
+use crate::checksum::CheckSum;
 use crate::snapshot::Snapshot;
 use crate::snapshot_1::Comparison::{Identical, Modified};
 use crate::{file, stats};
@@ -38,7 +38,7 @@ impl Snapshot1 {
 
     pub fn digest(&mut self, f2: &File) -> Option<(Comparison, File)> {
         return self.files_by_path.remove(&f2.path).map(|f1| {
-            if f2.checksum == f1.checksum {
+            if file::equals(&f1, &f2) {
                 (Identical, f1)
             } else {
                 (Modified, f1)
@@ -46,14 +46,14 @@ impl Snapshot1 {
         });
     }
 
-    pub fn conclude(&mut self) -> (Stats, HashMap<ContentsHash, Vec<File>>) {
-        let mut files_by_hash: HashMap<ContentsHash, Vec<File>> = HashMap::new();
+    pub fn conclude(&mut self) -> (Stats, HashMap<CheckSum, Vec<File>>) {
+        let mut files_by_hash: HashMap<CheckSum, Vec<File>> = HashMap::new();
 
         for (_, f) in self.files_by_path.drain() {
-            if !files_by_hash.contains_key(&f.checksum) {
-                files_by_hash.insert(f.checksum, vec![]);
+            if !files_by_hash.contains_key(&f.check_sum) {
+                files_by_hash.insert(f.check_sum, vec![]);
             }
-            files_by_hash.get_mut(&f.checksum).unwrap().push(f);
+            files_by_hash.get_mut(&f.check_sum).unwrap().push(f);
         }
         return (
             std::mem::replace(&mut self.total, Stats::new()),

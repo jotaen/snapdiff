@@ -38,7 +38,7 @@ impl Stats {
 
 #[cfg(test)]
 mod tests {
-    use crate::file;
+    use crate::file::File;
     use crate::stats;
     use stats::Stats;
 
@@ -52,7 +52,7 @@ mod tests {
     #[test]
     fn stats_records_file() {
         let mut r = Stats::new();
-        r.record(&file::from_strings("/tmp/x", "Foo"));
+        r.record(&File::from_strings("/tmp/x", "Foo"));
         assert_eq!(r.size(), 3);
         assert_eq!(r.files_count(), 1);
     }

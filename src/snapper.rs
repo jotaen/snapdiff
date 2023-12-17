@@ -1,3 +1,4 @@
+use crate::checksum::CheckSummer;
 use crate::cli::CtrlCSignal;
 use crate::dir_iter::DirIterator;
 use crate::progress::Progress;
@@ -103,7 +104,7 @@ where
             })?;
             let mut reader = io::BufReader::with_capacity(chunk_size as usize, disk_file);
             let mut size_bytes: file::SizeBytes = 0;
-            let mut checksum_context = md5::Context::new();
+            let mut checksummer = CheckSummer::new();
             loop {
                 if ctrlc_mtx.load(Ordering::SeqCst) {
                     println!();
@@ -119,7 +120,7 @@ where
                 if length == 0 {
                     break;
                 }
-                checksum_context.consume(buffer);
+                checksummer.consume(&buffer);
                 size_bytes += length as file::SizeBytes;
                 reader.consume(length);
                 {
@@ -129,7 +130,7 @@ where
             }
 
             let rel_path = p.strip_prefix(&root).unwrap().to_path_buf();
-            let f = File::new(rel_path, size_bytes, checksum_context.compute());
+            let f = File::new(rel_path, size_bytes, checksummer.finalize());
 
             {
                 let mut s = snap_mtx.lock().unwrap();

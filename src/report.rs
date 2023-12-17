@@ -29,7 +29,7 @@ impl Report {
         };
     }
 
-    pub fn serialize(&self) -> String {
+    pub fn summary(&self) -> String {
         let files = vec![
             "FILES".to_string(),
             dec(self.total_snap_1.files_count() as i128),
