@@ -1,5 +1,6 @@
 mod cli;
 mod dir_iter;
+mod error;
 mod file;
 mod format;
 mod progress;
@@ -11,14 +12,13 @@ mod snapshot_2;
 mod stats;
 
 use crate::cli::Cli;
+use crate::error::Error;
 use crate::snapper::{Config, Snapper};
 use crate::snapshot_1::Snapshot1;
 use crate::snapshot_2::Snapshot2;
 use clap::Parser;
 use std::process;
 use std::thread::available_parallelism;
-
-pub(crate) type Error = String;
 
 fn run() -> Result<(), Error> {
     let args = Cli::parse();
@@ -33,12 +33,12 @@ fn run() -> Result<(), Error> {
 
     let snap1 = {
         let snap1 = Snapshot1::new();
-        snapper.process("Snap 1", root1, snap1)
+        snapper.process("Snap 1", root1, snap1)?
     };
 
     let result = {
         let snap2 = Snapshot2::new(snap1);
-        snapper.process("Snap 2", root2, snap2).conclude()
+        snapper.process("Snap 2", root2, snap2)?.conclude()
     };
 
     println!("{}", result.serialize());
@@ -48,7 +48,7 @@ fn run() -> Result<(), Error> {
 fn main() {
     let status = run();
     if !status.is_ok() {
-        println!("Error: {}", status.unwrap_err());
+        println!("{}", status.unwrap_err());
         process::exit(1);
     }
 }

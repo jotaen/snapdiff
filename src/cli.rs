@@ -19,12 +19,11 @@ impl Cli {
     }
 
     pub fn get_snap<'a>(&'a self, s: &'a String) -> Result<&path::Path, Error> {
-        let m = fs::metadata(s);
-        if !m.is_ok() {
-            return Err(format!("cannot open directory: {}", s));
-        }
-        if !m.unwrap().is_dir() {
-            return Err(format!("not a directory: {}", s));
+        let m = fs::metadata(s).map_err(|e| {
+            return Error::from(format!("cannot open directory: {}", s), e.to_string());
+        })?;
+        if !m.is_dir() {
+            return Err(Error::new(format!("not a directory: {}", s)));
         }
         return Ok(path::Path::new(s));
     }

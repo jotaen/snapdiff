@@ -1,3 +1,4 @@
+use crate::error::Error;
 use crate::stats::Stats;
 use std::cmp::Ordering;
 use std::{fs, path};
@@ -23,8 +24,8 @@ impl DirIterator {
         };
     }
 
-    pub fn scan(&mut self, root: &path::Path) -> ScanStats {
-        self.scan_dir(root);
+    pub fn scan(&mut self, root: &path::Path) -> Result<ScanStats, Error> {
+        self.scan_dir(root)?;
         self.large_files.paths.sort_by(|(_, s1), (_, s2)| {
             return if s1 > s2 {
                 Ordering::Less
@@ -34,21 +35,30 @@ impl DirIterator {
                 Ordering::Equal
             };
         });
-        return self.scan_stats;
+        return Ok(self.scan_stats);
     }
 
-    fn scan_dir(&mut self, path: &path::Path) {
+    fn scan_dir(&mut self, path: &path::Path) -> Result<(), Error> {
         if !path.is_dir() {
-            return;
+            return Ok(());
         }
-        if fs::read_dir(path).is_err() {
+        for read_res in fs::read_dir(path).map_err(|e| {
             self.scan_stats.skipped_folders += 1;
-            return;
-        }
-        for read_res in fs::read_dir(path).unwrap() {
-            let p = read_res.expect("Cannot determine path").path();
+            return Error::from(
+                format!("cannot read directory: {}", path.display()),
+                e.to_string(),
+            );
+        })? {
+            let p = read_res
+                .map_err(|e| {
+                    return Error::from(
+                        format!("cannot inspect files in directory: {}", path.display()),
+                        e.to_string(),
+                    );
+                })
+                .map(|r| r.path())?;
             if p.is_dir() {
-                self.scan_dir(&p);
+                self.scan_dir(&p)?;
             } else {
                 fs::metadata(&p)
                     .map(|m| {
@@ -65,6 +75,7 @@ impl DirIterator {
                     });
             }
         }
+        return Ok(());
     }
 
     pub fn next_file(&mut self) -> Option<path::PathBuf> {

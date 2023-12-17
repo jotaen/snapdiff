@@ -1,7 +1,7 @@
 use crate::dir_iter::DirIterator;
-use crate::file;
 use crate::progress::Progress;
 use crate::snapshot::Snapshot;
+use crate::{file, Error};
 use file::File;
 use std::io::BufRead;
 use std::ops::DerefMut;
@@ -32,14 +32,14 @@ impl Snapper {
         return Snapper { config, ctrlc_arc };
     }
 
-    pub fn process<S>(&self, name: &'static str, root: &path::Path, snap: S) -> S
+    pub fn process<S>(&self, name: &'static str, root: &path::Path, snap: S) -> Result<S, Error>
     where
         S: Snapshot + std::fmt::Debug + Send + 'static,
     {
         let mut progress = Progress::new(name);
         progress.scan_start();
         let mut dir_it = DirIterator::new(self.config.chunk_size as u64);
-        let s = dir_it.scan(root);
+        let s = dir_it.scan(root)?;
         progress.scan_done(s);
 
         let dir_it_arc = Arc::new(Mutex::new(dir_it));
@@ -60,7 +60,7 @@ impl Snapper {
         }
 
         for handle in handles {
-            handle.join().unwrap();
+            handle.join().unwrap()?;
         }
 
         let snap = Arc::try_unwrap(snap_arc).unwrap().into_inner().unwrap();
@@ -69,7 +69,7 @@ impl Snapper {
             .into_inner()
             .unwrap()
             .process_done();
-        return snap;
+        return Ok(snap);
     }
 }
 
@@ -80,11 +80,11 @@ fn spawn_worker<S>(
     ctrlc_mtx: Arc<AtomicBool>,
     root: path::PathBuf,
     chunk_size: usize,
-) -> JoinHandle<()>
+) -> JoinHandle<Result<(), Error>>
 where
     S: Snapshot + std::fmt::Debug + Send + 'static,
 {
-    return thread::spawn(move || {
+    return thread::spawn(move || -> Result<(), Error> {
         {
             let mut p = progress_mtx.lock().unwrap();
             p.process_inc(0, 0 as file::SizeBytes);
@@ -101,10 +101,9 @@ where
                 entry.unwrap()
             };
 
-            let disk_file = fs::File::options()
-                .read(true)
-                .open(&p)
-                .expect("Failed to open file");
+            let disk_file = fs::File::options().read(true).open(&p).map_err(|e| {
+                return Error::from(format!("cannot open file: {}", p.display()), e.to_string());
+            })?;
             let mut reader = io::BufReader::with_capacity(chunk_size, disk_file);
             let mut size_bytes: file::SizeBytes = 0;
             let mut checksum_context = md5::Context::new();
@@ -113,7 +112,12 @@ where
                     println!();
                     std::process::exit(255);
                 }
-                let buffer = reader.fill_buf().expect("Failed to read file");
+                let buffer = reader.fill_buf().map_err(|e| {
+                    return Error::from(
+                        format!("failed to read from file: {}", p.display()),
+                        e.to_string(),
+                    );
+                })?;
                 let length = buffer.len();
                 if length == 0 {
                     break;
@@ -139,5 +143,6 @@ where
                 p.process_inc(1, 0);
             }
         }
+        Ok(())
     });
 }
