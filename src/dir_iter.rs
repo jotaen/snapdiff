@@ -1,10 +1,10 @@
 use crate::error::Error;
 use crate::file::SizeBytes;
+use crate::snapper::CHUNK_SIZE;
 use std::cmp::Ordering;
 use std::{fs, path};
 
 pub struct DirIterator {
-    small_file_threshold: u64,
     large_files: PathList,
     small_files: PathList,
     pub root: path::PathBuf,
@@ -12,10 +12,9 @@ pub struct DirIterator {
 }
 
 impl DirIterator {
-    pub fn scan(root: &path::Path, small_file_threshold: u64) -> Result<DirIterator, Error> {
+    pub fn scan(root: &path::Path) -> Result<DirIterator, Error> {
         let mut dir_it = DirIterator {
             root: root.to_path_buf(),
-            small_file_threshold,
             large_files: PathList::new(),
             small_files: PathList::new(),
             scan_stats: ScanStats {
@@ -70,7 +69,7 @@ fn scan_dir(mut dir_it: DirIterator, path: &path::Path) -> Result<DirIterator, E
                     let size = m.len();
                     dir_it.scan_stats.scheduled_files_count += 1;
                     dir_it.scan_stats.scheduled_size += size;
-                    if size > dir_it.small_file_threshold {
+                    if size > CHUNK_SIZE {
                         dir_it.large_files.paths.push((p.to_path_buf(), size));
                     } else {
                         dir_it.small_files.paths.push((p.to_path_buf(), size));

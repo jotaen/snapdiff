@@ -15,33 +15,27 @@ mod stats;
 use crate::cli::{handle_ctrl_c, Cli};
 use crate::dir_iter::DirIterator;
 use crate::error::Error;
-use crate::snapper::{Config, Snapper};
+use crate::snapper::Snapper;
 use crate::snapshot_1::Snapshot1;
 use crate::snapshot_2::Snapshot2;
 use clap::Parser;
 use std::process;
-use std::thread::available_parallelism;
 
 fn run() -> Result<(), Error> {
-    let args = Cli::parse();
+    let cli = Cli::parse();
     let ctrl_c = handle_ctrl_c();
 
-    let config = Config {
-        worker: available_parallelism().unwrap().get(),
-        chunk_size: 1024 * 1024 * 10, // ~10MB
-    };
-
     let snap1 = {
-        let snapper1 = Snapper::new("Snap 1", config, ctrl_c.clone());
+        let snapper1 = Snapper::new("Snap 1", cli.num_workers(), ctrl_c.clone());
         let snap1 = Snapshot1::new();
-        let dir_it1 = DirIterator::scan(args.snap1()?, config.chunk_size)?;
+        let dir_it1 = DirIterator::scan(cli.snap1()?)?;
         snapper1.process(dir_it1, snap1)?
     };
 
     let report = {
-        let snapper2 = Snapper::new("Snap 2", config, ctrl_c.clone());
+        let snapper2 = Snapper::new("Snap 2", cli.num_workers(), ctrl_c.clone());
         let snap2 = Snapshot2::new(snap1);
-        let dir_it2 = DirIterator::scan(args.snap2()?, config.chunk_size)?;
+        let dir_it2 = DirIterator::scan(cli.snap2()?)?;
         snapper2.process(dir_it2, snap2)?.conclude()
     };
 

@@ -3,6 +3,7 @@ use clap::Parser;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::thread;
 use std::{fs, path};
 
 #[derive(Parser, Debug)]
@@ -10,6 +11,9 @@ use std::{fs, path};
 pub struct Cli {
     snap1_path: String,
     snap2_path: String,
+
+    #[arg(short = 'w', help = "Number of CPU cores to utilise")]
+    workers: Option<usize>,
 }
 
 impl Cli {
@@ -19,6 +23,12 @@ impl Cli {
 
     pub fn snap2(&self) -> Result<&path::Path, Error> {
         return self.get_snap(&self.snap2_path);
+    }
+
+    pub fn num_workers(&self) -> usize {
+        return self.workers.unwrap_or_else(|| {
+            return thread::available_parallelism().unwrap().get();
+        });
     }
 
     fn get_snap<'a>(&'a self, s: &'a String) -> Result<&path::Path, Error> {

@@ -5,7 +5,7 @@ run::test() {
 
 run::cli() {
   RUSTFLAGS="${RUSTFLAGS} -A dead_code" \
-    cargo run "$@"
+    cargo run -- "$@"
 }
 
 run::build() {

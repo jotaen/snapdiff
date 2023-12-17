@@ -12,23 +12,19 @@ use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::{fs, io, thread};
 
-#[derive(Copy, Clone)]
-pub struct Config {
-    pub worker: usize,
-    pub chunk_size: u64,
-}
+pub const CHUNK_SIZE: u64 = 1024 * 1024 * 10; // ~10MB
 
 pub struct Snapper {
     name: &'static str,
-    config: Config,
+    num_workers: usize,
     ctrl_csignal: CtrlCSignal,
 }
 
 impl Snapper {
-    pub fn new(name: &'static str, config: Config, ctrl_csignal: CtrlCSignal) -> Snapper {
+    pub fn new(name: &'static str, num_workers: usize, ctrl_csignal: CtrlCSignal) -> Snapper {
         return Snapper {
             name,
-            config,
+            num_workers,
             ctrl_csignal,
         };
     }
@@ -46,13 +42,12 @@ impl Snapper {
         let progress_arc = Arc::new(Mutex::new(progress));
         let mut handles = vec![];
 
-        for _i in 0..self.config.worker {
+        for _i in 0..self.num_workers {
             let handle = spawn_worker(
                 Arc::clone(&dir_it_arc),
                 Arc::clone(&snap_arc),
                 Arc::clone(&progress_arc),
                 Arc::clone(&self.ctrl_csignal),
-                self.config.chunk_size,
             );
             handles.push(handle);
         }
@@ -76,7 +71,6 @@ fn spawn_worker<S>(
     snap_mtx: Arc<Mutex<S>>,
     progress_mtx: Arc<Mutex<Progress>>,
     ctrlc_mtx: Arc<AtomicBool>,
-    chunk_size: u64,
 ) -> JoinHandle<Result<(), Error>>
 where
     S: Snapshot + std::fmt::Debug + Send + 'static,
@@ -102,7 +96,7 @@ where
             let disk_file = fs::File::options().read(true).open(&p).map_err(|e| {
                 return Error::from(format!("cannot open file: {}", p.display()), e.to_string());
             })?;
-            let mut reader = io::BufReader::with_capacity(chunk_size as usize, disk_file);
+            let mut reader = io::BufReader::with_capacity(CHUNK_SIZE as usize, disk_file);
             let mut size_bytes: file::SizeBytes = 0;
             let mut checksummer = CheckSummer::new();
             loop {
