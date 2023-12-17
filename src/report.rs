@@ -1,7 +1,7 @@
-use stats::Stats;
-use crate::format::{dec, dec_signed};
 use crate::format::term::*;
+use crate::format::{dec, dec_signed};
 use crate::stats;
+use stats::Stats;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Report {
@@ -59,15 +59,15 @@ impl Report {
         let modified_delta = {
             let delta = self.modified_snap_2.size() as i128 - self.modified_snap_1.size() as i128;
             if delta == 0 {
-                "".to_string()
+                "±0".to_string()
             } else {
-                format!(" ({})", dec_signed(delta))
+                dec_signed(delta)
             }
         };
         return format!(
             "
 {BLD}            {___}{___}            {: >f$}     {: >b$}{RST}
-{BLD}            {RST}{LGT}                      {DRK}{: >b$}{RST}
+{BLD}            {RST}{DRK}            {: >f$}     {: >b$}{RST}
 {BLD}TOTAL       {RST}{LGT}Snap 1      {: >f$}     {: >b$}{RST}
 {BLD}            {RST}{LGT}Snap 2      {: >f$}     {: >b$}{RST}
 {BLD}            {RST}{LGT}
@@ -75,10 +75,11 @@ impl Report {
 {BLD}            {RST}{BLU}Moved       {: >f$}     {: >b$}{RST}
 {BLD}            {RST}{GRN}Added       {: >f$}     {: >b$}{RST}
 {BLD}            {RST}{RED}Deleted     {: >f$}     {: >b$}{RST}
-{BLD}            {RST}{YLW}Modified    {: >f$}     {: >b$}{BRN}{}{RST}
+{BLD}            {RST}{YLW}Modified    {: >f$}     {: >b$}{BRN} ({}){RST}
 ",
             files[0],
             size[0],
+            "".to_string(),
             byte_markers,
             files[1],
             size[1],

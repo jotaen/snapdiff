@@ -1,3 +1,4 @@
+use crate::cli::CtrlCSignal;
 use crate::dir_iter::DirIterator;
 use crate::progress::Progress;
 use crate::snapshot::Snapshot;
@@ -8,39 +9,36 @@ use std::ops::DerefMut;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
-use std::{fs, io, path, thread};
+use std::{fs, io, thread};
 
+#[derive(Copy, Clone)]
 pub struct Config {
     pub worker: usize,
-    pub chunk_size: usize,
+    pub chunk_size: u64,
 }
 
 pub struct Snapper {
+    name: &'static str,
     config: Config,
-    ctrlc_arc: Arc<AtomicBool>,
+    ctrl_csignal: CtrlCSignal,
 }
 
 impl Snapper {
-    pub fn new(config: Config) -> Snapper {
-        let ctrlc_arc = Arc::new(AtomicBool::new(false));
-        let r = ctrlc_arc.clone();
-        ctrlc::set_handler(move || {
-            r.store(true, Ordering::SeqCst);
-        })
-        .expect("Error setting Ctrl-C handler");
-
-        return Snapper { config, ctrlc_arc };
+    pub fn new(name: &'static str, config: Config, ctrl_csignal: CtrlCSignal) -> Snapper {
+        return Snapper {
+            name,
+            config,
+            ctrl_csignal,
+        };
     }
 
-    pub fn process<S>(&self, name: &'static str, root: &path::Path, snap: S) -> Result<S, Error>
+    pub fn process<S>(&self, dir_it: DirIterator, snap: S) -> Result<S, Error>
     where
         S: Snapshot + std::fmt::Debug + Send + 'static,
     {
-        let mut progress = Progress::new(name);
+        let mut progress = Progress::new(self.name);
         progress.scan_start();
-        let mut dir_it = DirIterator::new(self.config.chunk_size as u64);
-        let s = dir_it.scan(root)?;
-        progress.scan_done(s);
+        progress.scan_done(dir_it.scan_stats);
 
         let dir_it_arc = Arc::new(Mutex::new(dir_it));
         let snap_arc = Arc::new(Mutex::new(snap));
@@ -52,8 +50,7 @@ impl Snapper {
                 Arc::clone(&dir_it_arc),
                 Arc::clone(&snap_arc),
                 Arc::clone(&progress_arc),
-                Arc::clone(&self.ctrlc_arc),
-                root.to_path_buf(),
+                Arc::clone(&self.ctrl_csignal),
                 self.config.chunk_size,
             );
             handles.push(handle);
@@ -78,8 +75,7 @@ fn spawn_worker<S>(
     snap_mtx: Arc<Mutex<S>>,
     progress_mtx: Arc<Mutex<Progress>>,
     ctrlc_mtx: Arc<AtomicBool>,
-    root: path::PathBuf,
-    chunk_size: usize,
+    chunk_size: u64,
 ) -> JoinHandle<Result<(), Error>>
 where
     S: Snapshot + std::fmt::Debug + Send + 'static,
@@ -90,21 +86,22 @@ where
             p.process_inc(0, 0 as file::SizeBytes);
         }
         loop {
-            let p = {
-                let entry = {
-                    let mut di = dir_it_mtx.lock().unwrap();
-                    di.deref_mut().next_file()
+            let (p, root) = {
+                let (entry, root) = {
+                    let mut di_mtx = dir_it_mtx.lock().unwrap();
+                    let di = di_mtx.deref_mut();
+                    (di.next_file(), di.root.to_path_buf())
                 };
                 if entry.is_none() {
                     break;
                 }
-                entry.unwrap()
+                (entry.unwrap(), root)
             };
 
             let disk_file = fs::File::options().read(true).open(&p).map_err(|e| {
                 return Error::from(format!("cannot open file: {}", p.display()), e.to_string());
             })?;
-            let mut reader = io::BufReader::with_capacity(chunk_size, disk_file);
+            let mut reader = io::BufReader::with_capacity(chunk_size as usize, disk_file);
             let mut size_bytes: file::SizeBytes = 0;
             let mut checksum_context = md5::Context::new();
             loop {

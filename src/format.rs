@@ -32,7 +32,7 @@ pub fn dec(x: i128) -> String {
 }
 
 pub fn dec_signed(x: i128) -> String {
-    let sign = if x > 0 {"+"} else {""};
+    let sign = if x > 0 { "+" } else { "" };
     return format!("{}{}", sign, dec(x));
 }
 

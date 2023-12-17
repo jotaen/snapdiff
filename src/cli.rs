@@ -1,5 +1,8 @@
 use crate::Error;
 use clap::Parser;
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::{fs, path};
 
 #[derive(Parser, Debug)]
@@ -27,4 +30,15 @@ impl Cli {
         }
         return Ok(path::Path::new(s));
     }
+
+pub type CtrlCSignal = Arc<AtomicBool>;
+
+pub fn handle_ctrl_c() -> CtrlCSignal {
+    let ctrlc_arc = Arc::new(AtomicBool::new(false));
+    let r = ctrlc_arc.clone();
+    ctrlc::set_handler(move || {
+        r.store(true, Ordering::SeqCst);
+    })
+    .expect("Error setting Ctrl-C handler");
+    return ctrlc_arc;
 }
