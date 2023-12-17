@@ -64,7 +64,7 @@ impl DirIterator {
                     .map(|m| {
                         let size = m.len();
                         self.scan_stats.scheduled_files.record(size);
-                        if size > self.small_file_threshold - 1 {
+                        if size > self.small_file_threshold {
                             self.large_files.paths.push((p.to_path_buf(), size));
                         } else {
                             self.small_files.paths.push((p.to_path_buf(), size));

@@ -4,7 +4,7 @@ mod error;
 mod file;
 mod format;
 mod progress;
-mod result;
+mod report;
 mod snapper;
 mod snapshot;
 mod snapshot_1;

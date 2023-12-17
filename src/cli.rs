@@ -18,7 +18,7 @@ impl Cli {
         return self.get_snap(&self.snap2_path);
     }
 
-    pub fn get_snap<'a>(&'a self, s: &'a String) -> Result<&path::Path, Error> {
+    fn get_snap<'a>(&'a self, s: &'a String) -> Result<&path::Path, Error> {
         let m = fs::metadata(s).map_err(|e| {
             return Error::from(format!("cannot open directory: {}", s), e.to_string());
         })?;

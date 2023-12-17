@@ -13,7 +13,8 @@ pub mod term {
     pub const BLU: &str = "\x1b[38;5;039m"; // Blue
     pub const GRN: &str = "\x1b[38;5;082m"; // Green
     pub const RED: &str = "\x1b[38;5;202m"; // Red
-    pub const YLW: &str = "\x1b[38;5;011m"; // Yellow
+    pub const YLW: &str = "\x1b[38;5;220m"; // Yellow
+    pub const BRN: &str = "\x1b[38;5;094m"; // Brown
 }
 
 pub fn dec(x: i128) -> String {
@@ -28,6 +29,11 @@ pub fn dec(x: i128) -> String {
         return format!("-{res}");
     }
     return res;
+}
+
+pub fn dec_signed(x: i128) -> String {
+    let sign = if x > 0 {"+"} else {""};
+    return format!("{}{}", sign, dec(x));
 }
 
 pub fn size_human(x: SizeBytes) -> String {
@@ -89,6 +95,13 @@ mod tests {
         assert_eq!(format::dec(12_345), "12,345");
         assert_eq!(format::dec(98_765), "98,765");
         assert_eq!(format::dec(123_456_789), "123,456,789");
+    }
+
+    #[test]
+    fn dec_signed() {
+        assert_eq!(format::dec_signed(-1), "-1");
+        assert_eq!(format::dec_signed(0), "0");
+        assert_eq!(format::dec_signed(1), "+1");
     }
 
     #[test]

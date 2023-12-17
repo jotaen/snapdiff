@@ -33,49 +33,6 @@ impl Stats {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-pub struct StatsDelta {
-    files_count: u64,
-    gain: SizeBytes,
-    loss: SizeBytes,
-}
-
-impl StatsDelta {
-    pub fn new() -> StatsDelta {
-        return StatsDelta {
-            files_count: 0,
-            gain: 0,
-            loss: 0,
-        };
-    }
-
-    pub fn record(&mut self, f1: &File, f2: &File) {
-        let delta: i128 = (f1.size_bytes as i64 - f2.size_bytes as i64) as i128;
-        if delta <= 0 {
-            self.loss += (-1 * delta) as SizeBytes;
-        } else {
-            self.gain += delta as SizeBytes;
-        }
-        self.files_count += 1;
-    }
-
-    pub fn diff(&self) -> i128 {
-        return self.gain as i128 - self.loss as i128;
-    }
-
-    pub fn gain(&self) -> SizeBytes {
-        return self.gain;
-    }
-
-    pub fn loss(&self) -> SizeBytes {
-        return self.loss;
-    }
-
-    pub fn files_count(&self) -> u64 {
-        return self.files_count;
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::file;

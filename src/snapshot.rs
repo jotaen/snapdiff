@@ -1,8 +1,7 @@
-use crate::{file, stats};
+use crate::file;
 
 pub trait Snapshot {
     fn add(&mut self, f1: file::File);
-    fn total(&self) -> stats::Stats;
 }
 
 #[cfg(test)]
@@ -42,10 +41,10 @@ mod tests {
         s2.add(file::from_strings("/modified-2", "modified-2222"));
 
         let res = s2.conclude();
-        assert_eq!(res.modified.files_count(), 2);
-        assert_eq!(res.modified.gain(), 3);
-        assert_eq!(res.modified.loss(), 5);
-        assert_eq!(res.modified.diff(), -2);
+        assert_eq!(res.modified_snap_1.files_count(), 2);
+        assert_eq!(res.modified_snap_1.size(), 20);
+        assert_eq!(res.modified_snap_2.files_count(), 2);
+        assert_eq!(res.modified_snap_2.size(), 18);
         assert_eq!(res.total_snap_1.files_count(), 2);
         assert_eq!(res.total_snap_2.files_count(), 2);
     }
@@ -111,7 +110,8 @@ mod tests {
 
         let res = s2.conclude();
         assert_eq!(res.identical.files_count(), 1);
-        assert_eq!(res.modified.files_count(), 1);
+        assert_eq!(res.modified_snap_1.files_count(), 1);
+        assert_eq!(res.modified_snap_2.files_count(), 1);
         assert_eq!(res.moved.files_count(), 1);
         assert_eq!(res.deleted.files_count(), 1);
         assert_eq!(res.added.files_count(), 1);
