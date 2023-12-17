@@ -12,8 +12,14 @@ pub struct Cli {
     snap1_path: String,
     snap2_path: String,
 
-    #[arg(short = 'w', help = "Number of CPU cores to utilise")]
-    workers: Option<usize>,
+    #[arg(
+        long = "workers",
+        alias = "worker",
+        short = 'w',
+        value_delimiter = ':',
+        help = "Number of CPU cores to utilise"
+    )]
+    workers: Option<Vec<usize>>,
 }
 
 impl Cli {
@@ -25,10 +31,29 @@ impl Cli {
         return self.get_snap(&self.snap2_path);
     }
 
-    pub fn num_workers(&self) -> usize {
-        return self.workers.unwrap_or_else(|| {
-            return thread::available_parallelism().unwrap().get();
-        });
+    pub fn num_workers(&self) -> (usize, usize) {
+        let cores = thread::available_parallelism().unwrap().get();
+        return self
+            .workers
+            .as_ref()
+            .map(|ws| {
+                if ws.len() == 1 {
+                    return (ws[0], ws[0]);
+                }
+                return (ws[0], ws[1]);
+            })
+            .map(|(mut w1, mut w2)| {
+                if w1 == 0 {
+                    w1 = cores;
+                }
+                if w2 == 0 {
+                    w2 = cores;
+                }
+                return (w1, w2);
+            })
+            .unwrap_or_else(|| {
+                return (cores, cores);
+            });
     }
 
     fn get_snap<'a>(&'a self, s: &'a String) -> Result<&path::Path, Error> {

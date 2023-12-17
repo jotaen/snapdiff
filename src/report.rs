@@ -15,6 +15,9 @@ pub struct Report {
     pub modified_snap_2: Stats,
 }
 
+pub const SNP1: &str = "Snap 1";
+pub const SNP2: &str = "Snap 2";
+
 impl Report {
     pub fn new() -> Report {
         return Report {
@@ -68,8 +71,8 @@ impl Report {
             "
 {BLD}            {___}{___}            {: >f$}     {: >b$}{RST}
 {BLD}            {RST}{DRK}            {: >f$}     {: >b$}{RST}
-{BLD}TOTAL       {RST}{LGT}Snap 1      {: >f$}     {: >b$}{RST}
-{BLD}            {RST}{LGT}Snap 2      {: >f$}     {: >b$}{RST}
+{BLD}TOTAL       {RST}{LGT}{SNP1}      {: >f$}     {: >b$}{RST}
+{BLD}            {RST}{LGT}{SNP2}      {: >f$}     {: >b$}{RST}
 {BLD}            {RST}{LGT}
 {BLD}OF WHICH    {RST}{BLU}Identical   {: >f$}     {: >b$}{RST}
 {BLD}            {RST}{BLU}Moved       {: >f$}     {: >b$}{RST}

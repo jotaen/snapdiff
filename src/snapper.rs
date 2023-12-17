@@ -10,33 +10,27 @@ use std::ops::DerefMut;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
-use std::{fs, io, thread};
+use std::{fs, io, path, thread};
 
 pub const CHUNK_SIZE: u64 = 1024 * 1024 * 10; // ~10MB
 
 pub struct Snapper {
-    name: &'static str,
     num_workers: usize,
     ctrl_csignal: CtrlCSignal,
 }
 
 impl Snapper {
-    pub fn new(name: &'static str, num_workers: usize, ctrl_csignal: CtrlCSignal) -> Snapper {
+    pub fn new(num_workers: usize, ctrl_csignal: CtrlCSignal) -> Snapper {
         return Snapper {
-            name,
             num_workers,
             ctrl_csignal,
         };
     }
 
-    pub fn process<S>(&self, dir_it: DirIterator, snap: S) -> Result<S, Error>
+    pub fn process<S>(&self, dir_it: DirIterator, snap: S, progress: Progress) -> Result<S, Error>
     where
         S: Snapshot + std::fmt::Debug + Send + 'static,
     {
-        let mut progress = Progress::new(self.name);
-        progress.scan_start();
-        progress.scan_done(&dir_it.scan_stats);
-
         let dir_it_arc = Arc::new(Mutex::new(dir_it));
         let snap_arc = Arc::new(Mutex::new(snap));
         let progress_arc = Arc::new(Mutex::new(progress));
@@ -93,7 +87,7 @@ where
                 (entry.unwrap(), root)
             };
 
-            let disk_file = fs::File::options().read(true).open(&p).map_err(|e| {
+            let disk_file = open_file(&p).map_err(|e| {
                 return Error::from(format!("cannot open file: {}", p.display()), e.to_string());
             })?;
             let mut reader = io::BufReader::with_capacity(CHUNK_SIZE as usize, disk_file);
@@ -137,4 +131,8 @@ where
         }
         Ok(())
     });
+}
+
+pub fn open_file(p: &path::Path) -> io::Result<fs::File> {
+    return fs::File::options().read(true).open(&p);
 }

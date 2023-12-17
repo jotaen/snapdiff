@@ -15,6 +15,8 @@ mod stats;
 use crate::cli::{handle_ctrl_c, Cli};
 use crate::dir_iter::DirIterator;
 use crate::error::Error;
+use crate::progress::Progress;
+use crate::report::{SNP1, SNP2};
 use crate::snapper::Snapper;
 use crate::snapshot_1::Snapshot1;
 use crate::snapshot_2::Snapshot2;
@@ -25,18 +27,22 @@ fn run() -> Result<(), Error> {
     let cli = Cli::parse();
     let ctrl_c = handle_ctrl_c();
 
+    let (num_workers1, num_workers2) = cli.num_workers();
+
     let snap1 = {
-        let snapper1 = Snapper::new("Snap 1", cli.num_workers(), ctrl_c.clone());
+        let mut progress1 = Progress::new(SNP1);
+        let dir_it1 = DirIterator::scan(num_workers1, cli.snap1()?, &mut progress1)?;
+        let snapper1 = Snapper::new(num_workers1, ctrl_c.clone());
         let snap1 = Snapshot1::new();
-        let dir_it1 = DirIterator::scan(cli.snap1()?)?;
-        snapper1.process(dir_it1, snap1)?
+        snapper1.process(dir_it1, snap1, progress1)?
     };
 
     let report = {
-        let snapper2 = Snapper::new("Snap 2", cli.num_workers(), ctrl_c.clone());
+        let mut progress2 = Progress::new(SNP2);
+        let dir_it2 = DirIterator::scan(num_workers2, cli.snap2()?, &mut progress2)?;
+        let snapper2 = Snapper::new(num_workers2, ctrl_c.clone());
         let snap2 = Snapshot2::new(snap1);
-        let dir_it2 = DirIterator::scan(cli.snap2()?)?;
-        snapper2.process(dir_it2, snap2)?.conclude()
+        snapper2.process(dir_it2, snap2, progress2)?.conclude()
     };
 
     println!("{}", report.summary());
