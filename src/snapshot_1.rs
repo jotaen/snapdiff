@@ -15,7 +15,7 @@ pub struct Snapshot1 {
 
 impl Snapshot for Snapshot1 {
     fn add(&mut self, f1: File) {
-        self.total.record_file(&f1);
+        self.total.record(&f1);
         if self.files_by_path.contains_key(&f1.path) {
             panic!("Added duplicate file")
         }
@@ -55,6 +55,9 @@ impl Snapshot1 {
             }
             files_by_hash.get_mut(&f.checksum).unwrap().push(f);
         }
-        return (self.total, files_by_hash);
+        return (
+            std::mem::replace(&mut self.total, Stats::new()),
+            files_by_hash,
+        );
     }
 }

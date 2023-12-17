@@ -31,6 +31,15 @@ impl Cli {
         return Ok(path::Path::new(s));
     }
 
+    pub fn report_file(&self) -> PathBuf {
+        return tempfile::NamedTempFile::new()
+            .map(|f| {
+                return f.path().to_path_buf();
+            })
+            .unwrap();
+    }
+}
+
 pub type CtrlCSignal = Arc<AtomicBool>;
 
 pub fn handle_ctrl_c() -> CtrlCSignal {

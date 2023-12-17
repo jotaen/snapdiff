@@ -38,7 +38,7 @@ impl Snapper {
     {
         let mut progress = Progress::new(self.name);
         progress.scan_start();
-        progress.scan_done(dir_it.scan_stats);
+        progress.scan_done(&dir_it.scan_stats);
 
         let dir_it_arc = Arc::new(Mutex::new(dir_it));
         let snap_arc = Arc::new(Mutex::new(snap));

@@ -1,8 +1,8 @@
 use std::path;
 
-pub(crate) type ContentsHash = md5::Digest;
+pub type ContentsHash = md5::Digest;
 
-pub(crate) type SizeBytes = u64;
+pub type SizeBytes = u64;
 
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub struct File {

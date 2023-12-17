@@ -3,7 +3,7 @@ use crate::format::{dec, dec_signed};
 use crate::stats;
 use stats::Stats;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Report {
     pub total_snap_1: Stats,
     pub total_snap_2: Stats,

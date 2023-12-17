@@ -1,7 +1,7 @@
 use crate::file;
 use file::{File, SizeBytes};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Stats {
     files_count: u64,
     size: SizeBytes,
@@ -15,12 +15,15 @@ impl Stats {
         };
     }
 
-    pub fn record_file(&mut self, f: &File) {
-        self.record(f.size_bytes);
+    pub fn new_with_file_storage() -> Stats {
+        return Stats {
+            files_count: 0,
+            size: 0,
+        };
     }
 
-    pub fn record(&mut self, s: SizeBytes) {
-        self.size += s;
+    pub fn record(&mut self, f: &File) {
+        self.size += f.size_bytes;
         self.files_count += 1;
     }
 
@@ -49,7 +52,7 @@ mod tests {
     #[test]
     fn stats_records_file() {
         let mut r = Stats::new();
-        r.record_file(&file::from_strings("/tmp/x", "Foo"));
+        r.record(&file::from_strings("/tmp/x", "Foo"));
         assert_eq!(r.size(), 3);
         assert_eq!(r.files_count(), 1);
     }

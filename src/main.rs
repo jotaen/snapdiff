@@ -37,14 +37,14 @@ fn run() -> Result<(), Error> {
         snapper1.process(dir_it1, snap1)?
     };
 
-    let result = {
+    let report = {
         let snapper2 = Snapper::new("Snap 2", config, ctrl_c.clone());
         let snap2 = Snapshot2::new(snap1);
         let dir_it2 = DirIterator::scan(args.snap2()?, config.chunk_size)?;
         snapper2.process(dir_it2, snap2)?.conclude()
     };
 
-    println!("{}", result.serialize());
+    println!("{}", report.serialize());
     return Ok(());
 }
 
