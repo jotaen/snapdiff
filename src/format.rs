@@ -9,6 +9,7 @@ pub mod term {
     pub const BLD: &str = "\x1b[1m"; // Bold
     pub const LGT: &str = "\x1b[38;5;253m"; // Light
     pub const GRY: &str = "\x1b[38;5;246m"; // Gray
+    pub const DRK: &str = "\x1b[38;5;237m"; // Dark
     pub const BLU: &str = "\x1b[38;5;039m"; // Blue
     pub const GRN: &str = "\x1b[38;5;082m"; // Green
     pub const RED: &str = "\x1b[38;5;202m"; // Red

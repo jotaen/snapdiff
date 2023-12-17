@@ -1,3 +1,4 @@
+mod cli;
 mod dir_iter;
 mod file;
 mod format;
@@ -9,22 +10,22 @@ mod snapshot_1;
 mod snapshot_2;
 mod stats;
 
+use crate::cli::Cli;
 use crate::snapper::{Config, Snapper};
 use crate::snapshot_1::Snapshot1;
 use crate::snapshot_2::Snapshot2;
+use clap::Parser;
 use std::process;
 use std::thread::available_parallelism;
-use std::{env, path};
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    if args.len() != 3 {
-        println!("Wrong args arity!");
-        process::exit(1);
-    }
+pub(crate) type Error = String;
 
-    let root1 = path::Path::new(&args[1]);
-    let root2 = path::Path::new(&args[2]);
+fn run() -> Result<(), Error> {
+    let args = Cli::parse();
+
+    let root1 = args.snap1()?;
+    let root2 = args.snap2()?;
+
     let snapper = Snapper::new(Config {
         worker: available_parallelism().unwrap().get(),
         chunk_size: 1024 * 1024 * 10, // ~10MB
@@ -41,4 +42,13 @@ fn main() {
     };
 
     println!("{}", result.serialize());
+    return Ok(());
+}
+
+fn main() {
+    let status = run();
+    if !status.is_ok() {
+        println!("Error: {}", status.unwrap_err());
+        process::exit(1);
+    }
 }

@@ -49,13 +49,17 @@ impl Result {
         ];
         let longest_size = size.iter().map(|s| s.len()).max().unwrap();
         let longest_file_count = files.iter().map(|s| s.len()).max().unwrap();
+        let byte_markers = {
+            let markers = "T   G   M   K   B";
+            markers[markers.len() - longest_size..].to_string()
+        };
         return format!(
             "
 {BLD}            {___}{___}            {: >f$}     {: >b$}{RST}
-
+{BLD}            {RST}{LGT}                      {DRK}{: >b$}{RST}
 {BLD}TOTAL       {RST}{LGT}Snap 1      {: >f$}     {: >b$}{RST}
 {BLD}            {RST}{LGT}Snap 2      {: >f$}     {: >b$}{RST}
-
+{BLD}            {RST}{LGT}
 {BLD}OF WHICH    {RST}{BLU}Identical   {: >f$}     {: >b$}{RST}
 {BLD}            {RST}{BLU}Moved       {: >f$}     {: >b$}{RST}
 {BLD}            {RST}{GRN}Added       {: >f$}     {: >b$}{RST}
@@ -64,6 +68,7 @@ impl Result {
 ",
             files[0],
             size[0],
+            byte_markers,
             files[1],
             size[1],
             files[2],
