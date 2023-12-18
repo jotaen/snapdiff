@@ -1,11 +1,12 @@
-use std::io;
-use std::io::Write;
+use crate::error::Error;
+use std::io::{BufWriter, Write};
+use std::{fs, io, path};
 
 pub const SNP1: &str = "Snap 1";
 pub const SNP2: &str = "Snap 2";
 
-#[derive(Debug)]
-pub struct Printer {
+#[derive(Debug, Copy, Clone)]
+pub struct TerminalPrinter {
     pub blank: &'static str,
     pub reset: &'static str,
     pub bold: &'static str,
@@ -19,9 +20,9 @@ pub struct Printer {
     pub brown: &'static str,
 }
 
-impl Printer {
-    pub fn new() -> Printer {
-        return Printer {
+impl TerminalPrinter {
+    pub fn new() -> TerminalPrinter {
+        return TerminalPrinter {
             blank: "",
             reset: "\x1b[0m",
             bold: "\x1b[1m",
@@ -36,8 +37,8 @@ impl Printer {
         };
     }
 
-    pub fn new_plain() -> Printer {
-        return Printer {
+    pub fn new_plain() -> TerminalPrinter {
+        return TerminalPrinter {
             blank: "",
             reset: "",
             bold: "",
@@ -55,5 +56,22 @@ impl Printer {
     pub fn print(&mut self, text: String) {
         print!("{}", text);
         io::stdout().flush().unwrap();
+    }
+}
+
+#[derive(Debug)]
+pub struct FilePrinter {
+    target_file: fs::File,
+}
+
+impl FilePrinter {
+    pub fn new(p: &path::Path) -> Result<FilePrinter, Error> {
+        let target_file = fs::File::create(&p)?;
+        return Ok(FilePrinter { target_file });
+    }
+
+    pub fn print(&self, text: String) {
+        let mut buffer = BufWriter::new(&self.target_file);
+        write!(buffer, "{}", text).expect("failed to write to report file");
     }
 }

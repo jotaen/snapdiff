@@ -7,4 +7,3 @@ edition = "2021"
 clap = { version = "4.4.11", features = ["derive"] }
 crc = "3.0.1"
 ctrlc = "3.4.1"
-tempfile = "3.8.1"

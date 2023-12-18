@@ -1,6 +1,6 @@
 use crate::file::SizeBytes;
 use crate::format::{dec, dec_signed};
-use crate::printer::{Printer, SNP1, SNP2};
+use crate::printer::{FilePrinter, TerminalPrinter, SNP1, SNP2};
 use crate::stats;
 use stats::Stats;
 
@@ -30,15 +30,35 @@ impl Report {
             total_snap_1: Stats::new(),
             total_snap_2: Stats::new(),
             identical: Stats::new(),
-            moved: Stats::new(),
-            added: Stats::new(),
-            deleted: Stats::new(),
+            moved: Stats::new_with_file_storage(),
+            added: Stats::new_with_file_storage(),
+            deleted: Stats::new_with_file_storage(),
             modified_snap_1: Stats::new(),
-            modified_snap_2: Stats::new(),
+            modified_snap_2: Stats::new_with_file_storage(),
         };
     }
 
-    pub fn summary(&self, printer: Printer) -> String {
+    pub fn detailed_list(&self, printer: FilePrinter) {
+        printer.print(format!(
+            "=idn {} ({} files)\n",
+            self.total_snap_2.size(),
+            self.total_snap_2.files_count()
+        ));
+        for f in &self.moved.files {
+            printer.print(format!(">mvd {} {}\n", f.size_bytes, f.path.display()));
+        }
+        for f in &self.added.files {
+            printer.print(format!("+add {} {}\n", f.size_bytes, f.path.display()));
+        }
+        for f in &self.deleted.files {
+            printer.print(format!("-del {} {}\n", f.size_bytes, f.path.display()));
+        }
+        for f in &self.modified_snap_2.files {
+            printer.print(format!("*mdf {} {}\n", f.size_bytes, f.path.display()));
+        }
+    }
+
+    pub fn summary(&self, mut printer: TerminalPrinter) {
         let files = vec![
             "FILES".to_string(),
             dec(self.total_snap_1.files_count() as i128),
@@ -73,7 +93,7 @@ impl Report {
                 dec_signed(delta)
             }
         };
-        let Printer {
+        let TerminalPrinter {
             blank: ___,
             dark: drk,
             yellow: ylw,
@@ -86,7 +106,7 @@ impl Report {
             bold: bld,
             ..
         } = printer;
-        return format!(
+        printer.print(format!(
             "
 {bld}            {___}{___}            {: >f$}     {: >b$}{rst}
 {bld}            {rst}{drk}            {: >f$}     {: >b$}{rst}
@@ -120,6 +140,6 @@ impl Report {
             modified_delta,
             b = longest_size,
             f = longest_file_count,
-        );
+        ));
     }
 }

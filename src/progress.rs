@@ -1,6 +1,6 @@
 use crate::file::SizeBytes;
 use crate::format::{dec, duration_human, percent, size_human};
-use crate::printer::Printer;
+use crate::printer::TerminalPrinter;
 use crate::report::ScanStats;
 use std::io;
 use std::io::Write;
@@ -8,7 +8,7 @@ use std::time::Instant;
 
 #[derive(Debug)]
 pub struct Progress {
-    printer: Printer,
+    printer: TerminalPrinter,
     display_name: &'static str,
     initialised: Instant,
     last_trigger: Instant,
@@ -22,7 +22,7 @@ pub struct Progress {
 
 impl Progress {
     pub fn new(
-        printer: Printer,
+        printer: TerminalPrinter,
         display_name: &'static str,
         previous_files_count: Option<u64>,
     ) -> Progress {
@@ -42,7 +42,7 @@ impl Progress {
     }
 
     pub fn scan_start(&mut self) {
-        let Printer {
+        let TerminalPrinter {
             gray: gry,
             reset: rst,
             ..
@@ -62,7 +62,7 @@ impl Progress {
         } else {
             "".to_string()
         };
-        let Printer {
+        let TerminalPrinter {
             gray: gry,
             reset: rst,
             ..
@@ -104,7 +104,7 @@ impl Progress {
 
     fn print_process(&mut self, rate: String) {
         let indent = " ".repeat(self.display_name.len() + 2);
-        let Printer {
+        let TerminalPrinter {
             gray: gry,
             reset: rst,
             ..

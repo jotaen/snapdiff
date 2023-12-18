@@ -5,6 +5,8 @@ use file::{File, SizeBytes};
 pub struct Stats {
     files_count: u64,
     size: SizeBytes,
+    pub files: Vec<File>,
+    shall_store_files: bool,
 }
 
 impl Stats {
@@ -12,6 +14,8 @@ impl Stats {
         return Stats {
             files_count: 0,
             size: 0,
+            shall_store_files: false,
+            files: vec![],
         };
     }
 
@@ -19,12 +23,17 @@ impl Stats {
         return Stats {
             files_count: 0,
             size: 0,
+            shall_store_files: true,
+            files: vec![],
         };
     }
 
     pub fn record(&mut self, f: &File) {
         self.size += f.size_bytes;
         self.files_count += 1;
+        if self.shall_store_files {
+            self.files.push(f.clone());
+        }
     }
 
     pub fn size(&self) -> SizeBytes {
