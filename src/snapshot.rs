@@ -1,7 +1,45 @@
-use crate::file;
+use crate::checksum::CheckSum;
+use crate::file::File;
+use std::collections::hash_map::Drain;
+use std::collections::HashMap;
 
 pub trait Snapshot {
-    fn add(&mut self, f1: file::File);
+    fn add(&mut self, f1: File);
+}
+
+#[derive(Debug)]
+pub struct FilesByChecksums {
+    map: HashMap<CheckSum, Vec<File>>,
+}
+
+impl FilesByChecksums {
+    pub fn new() -> FilesByChecksums {
+        return FilesByChecksums {
+            map: HashMap::new(),
+        };
+    }
+
+    pub fn add(&mut self, f: File) {
+        if !self.map.contains_key(&f.check_sum) {
+            self.map.insert(f.check_sum, vec![]);
+        }
+        self.map.get_mut(&f.check_sum).unwrap().push(f);
+    }
+
+    pub fn withdraw(&mut self, checksum: &CheckSum) -> Option<File> {
+        if !self.map.contains_key(checksum) {
+            return None;
+        }
+        let f = self.map.get_mut(checksum).unwrap().remove(0);
+        if self.map.get(checksum).unwrap().is_empty() {
+            self.map.remove(checksum);
+        }
+        return Some(f);
+    }
+
+    pub fn drain(&mut self) -> Drain<'_, CheckSum, Vec<File>> {
+        return self.map.drain();
+    }
 }
 
 #[cfg(test)]
@@ -121,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn test_moved_and_identical_files() {
+    fn test_duplicate_files() {
         let mut s1 = Snapshot1::new();
         s1.add(File::from_strings("/b", "1"));
         s1.add(File::from_strings("/c", "1"));

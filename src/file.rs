@@ -19,6 +19,10 @@ impl File {
         };
     }
 
+    pub fn equals(&self, f2: &File) -> bool {
+        return self.check_sum == f2.check_sum && self.size_bytes == f2.size_bytes;
+    }
+
     #[allow(dead_code)]
     pub fn from_strings(path: &str, contents: &str) -> File {
         return File {
@@ -27,8 +31,4 @@ impl File {
             check_sum: CheckSummer::new().consume(contents.as_bytes()).finalize(),
         };
     }
-}
-
-pub fn equals(f1: &File, f2: &File) -> bool {
-    return f1.check_sum == f2.check_sum && f1.size_bytes == f2.size_bytes;
 }
