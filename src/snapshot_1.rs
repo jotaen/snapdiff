@@ -46,6 +46,10 @@ impl Snapshot1 {
         });
     }
 
+    pub fn total(&self) -> &Stats {
+        return &self.total;
+    }
+
     pub fn conclude(&mut self) -> (Stats, HashMap<CheckSum, Vec<File>>) {
         let mut files_by_hash: HashMap<CheckSum, Vec<File>> = HashMap::new();
 

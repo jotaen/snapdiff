@@ -11,21 +11,21 @@ use std::collections::HashMap;
 pub struct Snapshot2 {
     snap_1: Snapshot1,
     snap_2_remainder: HashMap<CheckSum, Vec<File>>,
-    result: Report,
+    report: Report,
 }
 
 impl Snapshot for Snapshot2 {
     fn add(&mut self, f2: File) {
-        self.result.total_snap_2.record(&f2);
+        self.report.total_snap_2.record(&f2);
         self.snap_1
             .digest(&f2)
             .map(|(c, f1)| match c {
                 Comparison::Identical => {
-                    self.result.identical.record(&f2);
+                    self.report.identical.record(&f2);
                 }
                 Comparison::Modified => {
-                    self.result.modified_snap_1.record(&f1);
-                    self.result.modified_snap_2.record(&f2);
+                    self.report.modified_snap_1.record(&f1);
+                    self.report.modified_snap_2.record(&f2);
                 }
             })
             .unwrap_or_else(|| {
@@ -45,22 +45,22 @@ impl Snapshot2 {
         return Snapshot2 {
             snap_1: source_snap,
             snap_2_remainder: HashMap::new(),
-            result: Report::new(),
+            report: Report::new(),
         };
     }
 
     pub fn conclude(&mut self) -> Report {
         let (total1, mut snap_1_remainder) = self.snap_1.conclude();
-        self.result.total_snap_1 = total1;
+        self.report.total_snap_1 = total1;
         self.snap_2_remainder.retain(|checksum, fs| {
             if !snap_1_remainder.contains_key(checksum) {
                 for f1 in fs {
-                    self.result.added.record(&f1);
+                    self.report.added.record(&f1);
                 }
                 return true;
             }
             let f1 = snap_1_remainder.get_mut(checksum).unwrap().remove(0);
-            self.result.moved.record(&f1);
+            self.report.moved.record(&f1);
             if snap_1_remainder.get(checksum).unwrap().is_empty() {
                 snap_1_remainder.remove(checksum);
             }
@@ -69,10 +69,10 @@ impl Snapshot2 {
 
         for (_, fs) in snap_1_remainder {
             for f1 in fs {
-                self.result.deleted.record(&f1);
+                self.report.deleted.record(&f1);
             }
         }
 
-        return std::mem::replace(&mut self.result, Report::new());
+        return std::mem::replace(&mut self.report, Report::new());
     }
 }
