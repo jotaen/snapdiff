@@ -41,19 +41,18 @@ impl Report {
     pub fn detailed_list(&self, printer: FilePrinter) {
         printer.print(format!(
             "=idn {} ({} files)\n",
-            self.total_snap_2.size(),
-            self.total_snap_2.files_count()
+            self.total_snap_2.size, self.total_snap_2.files_count
         ));
-        for f in &self.moved.files {
+        for f in self.moved.files().unwrap() {
             printer.print(format!(">mvd {} {}\n", f.size_bytes, f.path.display()));
         }
-        for f in &self.added.files {
+        for f in self.added.files().unwrap() {
             printer.print(format!("+add {} {}\n", f.size_bytes, f.path.display()));
         }
-        for f in &self.deleted.files {
+        for f in self.deleted.files().unwrap() {
             printer.print(format!("-del {} {}\n", f.size_bytes, f.path.display()));
         }
-        for f in &self.modified_snap_2.files {
+        for f in self.modified_snap_2.files().unwrap() {
             printer.print(format!("*mdf {} {}\n", f.size_bytes, f.path.display()));
         }
     }
@@ -61,23 +60,23 @@ impl Report {
     pub fn summary(&self, mut printer: TerminalPrinter) {
         let files = vec![
             "FILES".to_string(),
-            dec(self.total_snap_1.files_count() as i128),
-            dec(self.total_snap_2.files_count() as i128),
-            dec(self.identical.files_count() as i128),
-            dec(self.moved.files_count() as i128),
-            dec(self.added.files_count() as i128),
-            dec(self.deleted.files_count() as i128),
-            dec(self.modified_snap_2.files_count() as i128),
+            dec(self.total_snap_1.files_count as i128),
+            dec(self.total_snap_2.files_count as i128),
+            dec(self.identical.files_count as i128),
+            dec(self.moved.files_count as i128),
+            dec(self.added.files_count as i128),
+            dec(self.deleted.files_count as i128),
+            dec(self.modified_snap_2.files_count as i128),
         ];
         let size = vec![
             "BYTES".to_string(),
-            dec(self.total_snap_1.size() as i128),
-            dec(self.total_snap_2.size() as i128),
-            dec(self.identical.size() as i128),
-            dec(self.moved.size() as i128),
-            format!("+{}", dec(self.added.size() as i128)),
-            format!("-{}", dec(self.deleted.size() as i128)),
-            dec(self.modified_snap_2.size() as i128),
+            dec(self.total_snap_1.size as i128),
+            dec(self.total_snap_2.size as i128),
+            dec(self.identical.size as i128),
+            dec(self.moved.size as i128),
+            format!("+{}", dec(self.added.size as i128)),
+            format!("-{}", dec(self.deleted.size as i128)),
+            dec(self.modified_snap_2.size as i128),
         ];
         let longest_size = size.iter().map(|s| s.len()).max().unwrap();
         let longest_file_count = files.iter().map(|s| s.len()).max().unwrap();
@@ -86,7 +85,7 @@ impl Report {
             markers[markers.len() - longest_size..].to_string()
         };
         let modified_delta = {
-            let delta = self.modified_snap_2.size() as i128 - self.modified_snap_1.size() as i128;
+            let delta = self.modified_snap_2.size as i128 - self.modified_snap_1.size as i128;
             if delta == 0 {
                 "±0".to_string()
             } else {

@@ -35,11 +35,8 @@ fn run() -> Result<(), Error> {
     };
 
     let report = {
-        let mut progress2 = Progress::new(
-            cli.terminal_printer,
-            SNP2,
-            Some(snap1.total().files_count()),
-        );
+        let mut progress2 =
+            Progress::new(cli.terminal_printer, SNP2, Some(snap1.total().files_count));
         let dir_it2 = DirIterator::scan(cli.workers2, &cli.snap2, &mut progress2)?;
         let snapper2 = Snapper::new(cli.workers2, cli.ctrl_c.clone());
         let snap2 = Snapshot2::new(snap1);
