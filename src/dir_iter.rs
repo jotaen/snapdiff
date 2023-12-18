@@ -93,9 +93,12 @@ fn scan_dir(mut dir_it: DirIterator, path: &path::Path) -> Result<DirIterator, E
                 );
             })
             .map(|r| r.path())?;
+        if p.is_symlink() {
+            continue;
+        }
         if p.is_dir() {
             dir_it = scan_dir(dir_it, &p)?;
-        } else {
+        } else if p.is_file() {
             open_file(&p)
                 .map(|f| {
                     let m = f.metadata().expect("failed to query file metadata");
