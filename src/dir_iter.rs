@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::file::SizeBytes;
 use crate::progress::Progress;
+use crate::report::ScanStats;
 use crate::snapper::{open_file, CHUNK_SIZE};
 use std::cmp::Ordering;
 use std::{fs, path};
@@ -106,13 +107,6 @@ fn scan_dir(mut dir_it: DirIterator, path: &path::Path) -> Result<DirIterator, E
         }
     }
     return Ok(dir_it);
-}
-
-pub struct ScanStats {
-    pub scheduled_files_count: u64,
-    pub scheduled_size: SizeBytes,
-    pub skipped_folders: u64,
-    pub skipped_files: u64,
 }
 
 struct PathList {

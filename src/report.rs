@@ -1,5 +1,6 @@
-use crate::format::term::*;
+use crate::file::SizeBytes;
 use crate::format::{dec, dec_signed};
+use crate::printer::{Printer, SNP1, SNP2};
 use crate::stats;
 use stats::Stats;
 
@@ -15,8 +16,13 @@ pub struct Report {
     pub modified_snap_2: Stats,
 }
 
-pub const SNP1: &str = "Snap 1";
-pub const SNP2: &str = "Snap 2";
+#[derive(Debug)]
+pub struct ScanStats {
+    pub scheduled_files_count: u64,
+    pub scheduled_size: SizeBytes,
+    pub skipped_folders: u64,
+    pub skipped_files: u64,
+}
 
 impl Report {
     pub fn new() -> Report {
@@ -32,7 +38,7 @@ impl Report {
         };
     }
 
-    pub fn summary(&self) -> String {
+    pub fn summary(&self, printer: Printer) -> String {
         let files = vec![
             "FILES".to_string(),
             dec(self.total_snap_1.files_count() as i128),
@@ -67,18 +73,31 @@ impl Report {
                 dec_signed(delta)
             }
         };
+        let Printer {
+            blank: ___,
+            dark: drk,
+            yellow: ylw,
+            brown: brn,
+            light: lgt,
+            blue: blu,
+            green: grn,
+            red,
+            reset: rst,
+            bold: bld,
+            ..
+        } = printer;
         return format!(
             "
-{BLD}            {___}{___}            {: >f$}     {: >b$}{RST}
-{BLD}            {RST}{DRK}            {: >f$}     {: >b$}{RST}
-{BLD}TOTAL       {RST}{LGT}{SNP1}      {: >f$}     {: >b$}{RST}
-{BLD}            {RST}{LGT}{SNP2}      {: >f$}     {: >b$}{RST}
-{BLD}            {RST}{LGT}
-{BLD}OF WHICH    {RST}{BLU}Identical   {: >f$}     {: >b$}{RST}
-{BLD}            {RST}{BLU}Moved       {: >f$}     {: >b$}{RST}
-{BLD}            {RST}{GRN}Added       {: >f$}     {: >b$}{RST}
-{BLD}            {RST}{RED}Deleted     {: >f$}     {: >b$}{RST}
-{BLD}            {RST}{YLW}Modified    {: >f$}     {: >b$}{BRN} ({}){RST}
+{bld}            {___}{___}            {: >f$}     {: >b$}{rst}
+{bld}            {rst}{drk}            {: >f$}     {: >b$}{rst}
+{bld}TOTAL       {rst}{lgt}{SNP1}      {: >f$}     {: >b$}{rst}
+{bld}            {rst}{lgt}{SNP2}      {: >f$}     {: >b$}{rst}
+{bld}            {rst}{lgt}
+{bld}OF WHICH    {rst}{blu}Identical   {: >f$}     {: >b$}{rst}
+{bld}            {rst}{blu}Moved       {: >f$}     {: >b$}{rst}
+{bld}            {rst}{grn}Added       {: >f$}     {: >b$}{rst}
+{bld}            {rst}{red}Deleted     {: >f$}     {: >b$}{rst}
+{bld}            {rst}{ylw}Modified    {: >f$}     {: >b$}{brn} ({}){rst}
 ",
             files[0],
             size[0],

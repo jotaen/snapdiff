@@ -1,3 +1,4 @@
+use crate::printer::Printer;
 use crate::Error;
 use clap::Parser;
 use std::path::PathBuf;
@@ -20,6 +21,14 @@ pub struct Cli {
         help = "Number of CPU cores to utilise"
     )]
     workers: Option<Vec<usize>>,
+
+    #[arg(
+        long = "no-color",
+        alias = "no-colour",
+        default_value_t = false,
+        help = "Disable colouring of output"
+    )]
+    no_color: bool,
 }
 
 impl Cli {
@@ -72,6 +81,13 @@ impl Cli {
                 return f.path().to_path_buf();
             })
             .unwrap();
+    }
+
+    pub fn printer(&self) -> Printer {
+        if self.no_color {
+            return Printer::new_plain();
+        }
+        return Printer::new();
     }
 }
 

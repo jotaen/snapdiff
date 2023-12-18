@@ -1,13 +1,14 @@
-use crate::dir_iter::ScanStats;
 use crate::file::SizeBytes;
-use crate::format::term::*;
 use crate::format::{dec, duration_human, percent, size_human};
+use crate::printer::Printer;
+use crate::report::ScanStats;
 use std::io;
 use std::io::Write;
 use std::time::Instant;
 
 #[derive(Debug)]
 pub struct Progress {
+    printer: Printer,
     display_name: &'static str,
     initialised: Instant,
     last_trigger: Instant,
@@ -20,9 +21,14 @@ pub struct Progress {
 }
 
 impl Progress {
-    pub fn new(display_name: &'static str, previous_files_count: Option<u64>) -> Progress {
+    pub fn new(
+        printer: Printer,
+        display_name: &'static str,
+        previous_files_count: Option<u64>,
+    ) -> Progress {
         let init = Instant::now();
         return Progress {
+            printer,
             display_name,
             initialised: init,
             last_trigger: init,
@@ -35,9 +41,14 @@ impl Progress {
         };
     }
 
-    pub fn scan_start(&self) {
-        print!("{GRY}{}: Indexing...{RST}", self.display_name);
-        io::stdout().flush().unwrap();
+    pub fn scan_start(&mut self) {
+        let Printer {
+            gray: gry,
+            reset: rst,
+            ..
+        } = self.printer;
+        self.printer
+            .print(format!("{gry}{}: Indexing...{rst}", self.display_name));
     }
 
     pub fn scan_done(&mut self, s: &ScanStats) {
@@ -51,14 +62,19 @@ impl Progress {
         } else {
             "".to_string()
         };
-        print!(
-            "\r{GRY}{}: Indexed:     {: >f$} files  {: >7}{}{RST}\n",
+        let Printer {
+            gray: gry,
+            reset: rst,
+            ..
+        } = self.printer;
+        self.printer.print(format!(
+            "\r{gry}{}: Indexed:     {: >f$} files  {: >7}{}{rst}\n",
             self.display_name,
             dec(self.expected_files_count as i128),
             size_human(s.scheduled_size),
             skipped_info,
             f = self.files_display_length(),
-        );
+        ));
         io::stdout().flush().unwrap();
     }
 
@@ -81,15 +97,20 @@ impl Progress {
         self.bytes_since_last_trigger = 0;
     }
 
-    pub fn process_done(&self) {
+    pub fn process_done(&mut self) {
         self.print_process("           ".to_string());
-        print!("\n");
+        self.printer.print("\n".to_string());
     }
 
-    fn print_process(&self, rate: String) {
+    fn print_process(&mut self, rate: String) {
         let indent = " ".repeat(self.display_name.len() + 2);
-        print!(
-            "\r{}{GRY}Processing:  {: >f$} files  {: >7}   {: >5}    {: >3}   {}{RST} ",
+        let Printer {
+            gray: gry,
+            reset: rst,
+            ..
+        } = self.printer;
+        self.printer.print(format!(
+            "\r{}{gry}Processing:  {: >f$} files  {: >7}   {: >5}    {: >3}   {}{rst} ",
             indent,
             dec(self.current_files_count as i128),
             size_human(self.current_size),
@@ -97,7 +118,7 @@ impl Progress {
             duration_human(self.initialised.elapsed().as_secs()),
             rate,
             f = self.files_display_length(),
-        );
+        ));
         io::stdout().flush().unwrap();
     }
 
