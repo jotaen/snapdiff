@@ -65,8 +65,8 @@ impl Report {
             dec(self.total_snap_2.count.size as i128),
             dec(self.identical.count.size as i128),
             dec(self.moved.count.size as i128),
-            format!("+{}", dec(self.added.count.size as i128)),
-            format!("-{}", dec(self.deleted.count.size as i128)),
+            dec(self.added.count.size as i128),
+            dec(self.deleted.count.size as i128),
             dec(self.modified_snap_2.count.size as i128),
         ];
         let longest_size = size.iter().map(|s| s.len()).max().unwrap();
