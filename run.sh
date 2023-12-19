@@ -14,8 +14,9 @@ run::build() {
 
 run::demo() {
   local which="$1"
+  shift 1
   assert-demo "${which}"
-  run::cli "demo/${which}1" "demo/${which}2"
+  run::cli "$@" "demo/${which}1" "demo/${which}2"
 }
 
 run::format() {

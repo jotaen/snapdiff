@@ -1,4 +1,5 @@
 use crate::printer::{FilePrinter, TerminalPrinter};
+use crate::skipped::Skipped;
 use crate::Error;
 use clap::Parser;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -7,8 +8,9 @@ use std::thread;
 use std::{fs, path};
 
 pub struct Cli {
-    pub snap1: path::PathBuf,
-    pub snap2: path::PathBuf,
+    pub snap1_root: path::PathBuf,
+    pub snap2_root: path::PathBuf,
+    pub skipped: Skipped,
     pub workers1: usize,
     pub workers2: usize,
     pub terminal_printer: TerminalPrinter,
@@ -45,6 +47,20 @@ struct Args {
     report_file: Option<String>,
 
     #[arg(
+        long = "skip-dot-paths",
+        default_value_t = false,
+        help = "Ignore files or folders that start with a dot"
+    )]
+    skip_dot_paths: bool,
+
+    #[arg(
+        long = "skip-symlinks",
+        default_value_t = true,
+        help = "Ignore paths that are symlinks"
+    )]
+    skip_symlinks: bool,
+
+    #[arg(
         long = "workers",
         alias = "worker",
         value_delimiter = ':',
@@ -66,8 +82,9 @@ impl Cli {
         let args = Args::parse();
         let (workers1, workers2) = num_workers(args.workers);
         return Ok(Cli {
-            snap1: get_snap(&args.snap1_path)?,
-            snap2: get_snap(&args.snap2_path)?,
+            snap1_root: get_snap(&args.snap1_path)?,
+            snap2_root: get_snap(&args.snap2_path)?,
+            skipped: Skipped::new(args.skip_symlinks, args.skip_dot_paths),
             workers1,
             workers2,
             terminal_printer: if args.no_color {

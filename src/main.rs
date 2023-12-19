@@ -7,6 +7,7 @@ mod format;
 mod printer;
 mod progress;
 mod report;
+mod skipped;
 mod snapper;
 mod snapshot;
 mod snapshot_1;
@@ -28,16 +29,17 @@ fn run() -> Result<(), Error> {
 
     let snap1 = {
         let mut progress1 = Progress::new(cli.terminal_printer, SNP1, None);
-        let dir_it1 = DirIterator::scan(cli.workers1, &cli.snap1, &mut progress1)?;
+        let dir_it1 =
+            DirIterator::scan(cli.workers1, &cli.snap1_root, cli.skipped, &mut progress1)?;
         let snapper1 = Snapper::new(cli.workers1, cli.ctrl_c.clone());
         let snap1 = Snapshot1::new();
         snapper1.process(dir_it1, snap1, progress1)?
     };
 
     let report = {
-        let mut progress2 =
-            Progress::new(cli.terminal_printer, SNP2, Some(snap1.total().files_count));
-        let dir_it2 = DirIterator::scan(cli.workers2, &cli.snap2, &mut progress2)?;
+        let mut progress2 = Progress::new(cli.terminal_printer, SNP2, Some(snap1.total().count));
+        let dir_it2 =
+            DirIterator::scan(cli.workers2, &cli.snap2_root, cli.skipped, &mut progress2)?;
         let snapper2 = Snapper::new(cli.workers2, cli.ctrl_c.clone());
         let snap2 = Snapshot2::new(snap1);
         snapper2.process(dir_it2, snap2, progress2)?.conclude()

@@ -61,12 +61,12 @@ mod tests {
         s2.add(File::from_strings("/identical-2", "identical-2"));
 
         let res = s2.conclude();
-        assert_eq!(res.identical.files_count, 2);
-        assert_eq!(res.identical.size, 22);
-        assert_eq!(res.total_snap_1.files_count, 2);
-        assert_eq!(res.total_snap_1.size, 22);
-        assert_eq!(res.total_snap_2.files_count, 2);
-        assert_eq!(res.total_snap_2.size, 22);
+        assert_eq!(res.identical.count.files, 2);
+        assert_eq!(res.identical.count.size, 22);
+        assert_eq!(res.total_snap_1.count.files, 2);
+        assert_eq!(res.total_snap_1.count.size, 22);
+        assert_eq!(res.total_snap_2.count.files, 2);
+        assert_eq!(res.total_snap_2.count.size, 22);
     }
 
     #[test]
@@ -80,12 +80,12 @@ mod tests {
         s2.add(File::from_strings("/modified-2", "modified-2222"));
 
         let res = s2.conclude();
-        assert_eq!(res.modified_snap_1.files_count, 2);
-        assert_eq!(res.modified_snap_1.size, 20);
-        assert_eq!(res.modified_snap_2.files_count, 2);
-        assert_eq!(res.modified_snap_2.size, 18);
-        assert_eq!(res.total_snap_1.files_count, 2);
-        assert_eq!(res.total_snap_2.files_count, 2);
+        assert_eq!(res.modified_snap_1.count.files, 2);
+        assert_eq!(res.modified_snap_1.count.size, 20);
+        assert_eq!(res.modified_snap_2.count.files, 2);
+        assert_eq!(res.modified_snap_2.count.size, 18);
+        assert_eq!(res.total_snap_1.count.files, 2);
+        assert_eq!(res.total_snap_2.count.files, 2);
     }
 
     #[test]
@@ -99,9 +99,9 @@ mod tests {
         s2.add(File::from_strings("/moved-2222", "moved-2"));
 
         let res = s2.conclude();
-        assert_eq!(res.moved.files_count, 2);
-        assert_eq!(res.total_snap_1.files_count, 2);
-        assert_eq!(res.total_snap_2.files_count, 2);
+        assert_eq!(res.moved.count.files, 2);
+        assert_eq!(res.total_snap_1.count.files, 2);
+        assert_eq!(res.total_snap_2.count.files, 2);
     }
 
     #[test]
@@ -113,9 +113,9 @@ mod tests {
         s2.add(File::from_strings("/added-2", "added"));
 
         let res = s2.conclude();
-        assert_eq!(res.added.files_count, 2);
-        assert_eq!(res.total_snap_1.files_count, 0);
-        assert_eq!(res.total_snap_2.files_count, 2);
+        assert_eq!(res.added.count.files, 2);
+        assert_eq!(res.total_snap_1.count.files, 0);
+        assert_eq!(res.total_snap_2.count.files, 2);
     }
 
     #[test]
@@ -127,9 +127,9 @@ mod tests {
         let mut s2 = Snapshot2::new(s1);
 
         let res = s2.conclude();
-        assert_eq!(res.deleted.files_count, 2);
-        assert_eq!(res.total_snap_1.files_count, 2);
-        assert_eq!(res.total_snap_2.files_count, 0);
+        assert_eq!(res.deleted.count.files, 2);
+        assert_eq!(res.total_snap_1.count.files, 2);
+        assert_eq!(res.total_snap_2.count.files, 0);
     }
 
     #[test]
@@ -148,14 +148,14 @@ mod tests {
         s2.add(File::from_strings("/added", "added"));
 
         let res = s2.conclude();
-        assert_eq!(res.identical.files_count, 1);
-        assert_eq!(res.modified_snap_1.files_count, 1);
-        assert_eq!(res.modified_snap_2.files_count, 1);
-        assert_eq!(res.moved.files_count, 1);
-        assert_eq!(res.deleted.files_count, 1);
-        assert_eq!(res.added.files_count, 1);
-        assert_eq!(res.total_snap_1.files_count, 4);
-        assert_eq!(res.total_snap_2.files_count, 4);
+        assert_eq!(res.identical.count.files, 1);
+        assert_eq!(res.modified_snap_1.count.files, 1);
+        assert_eq!(res.modified_snap_2.count.files, 1);
+        assert_eq!(res.moved.count.files, 1);
+        assert_eq!(res.deleted.count.files, 1);
+        assert_eq!(res.added.count.files, 1);
+        assert_eq!(res.total_snap_1.count.files, 4);
+        assert_eq!(res.total_snap_2.count.files, 4);
     }
 
     #[test]
@@ -169,7 +169,7 @@ mod tests {
         s2.add(File::from_strings("/b", "1"));
 
         let res = s2.conclude();
-        assert_eq!(res.moved.files_count, 1);
-        assert_eq!(res.identical.files_count, 1);
+        assert_eq!(res.moved.count.files, 1);
+        assert_eq!(res.identical.count.files, 1);
     }
 }

@@ -1,7 +1,7 @@
 use crate::file::SizeBytes;
 use crate::format::{dec, duration_human, percent, size_human};
 use crate::printer::{Colours, Printer};
-use crate::report::ScanStats;
+use crate::stats::Count;
 use std::fmt::Debug;
 use std::io;
 use std::io::Write;
@@ -14,18 +14,17 @@ pub struct Progress<P: Printer> {
     initialised: Instant,
     last_trigger: Instant,
     bytes_since_last_trigger: SizeBytes,
-    current_files_count: u64,
-    current_size: SizeBytes,
-    expected_files_count: u64,
-    expected_size: SizeBytes,
-    previous_files_count: Option<u64>,
+    current: Count,
+    expected: Count,
+    skipped: Count,
+    previous_files_count: Option<Count>,
 }
 
 impl<P: Printer> Progress<P> {
     pub fn new(
         printer: P,
         display_name: &'static str,
-        previous_files_count: Option<u64>,
+        previous_files_count: Option<Count>,
     ) -> Progress<P> {
         let init = Instant::now();
         return Progress {
@@ -34,10 +33,9 @@ impl<P: Printer> Progress<P> {
             initialised: init,
             last_trigger: init,
             bytes_since_last_trigger: 0,
-            current_files_count: 0,
-            current_size: 0,
-            expected_files_count: 0,
-            expected_size: 0,
+            current: Count::new(),
+            expected: Count::new(),
+            skipped: Count::new(),
             previous_files_count,
         };
     }
@@ -52,13 +50,12 @@ impl<P: Printer> Progress<P> {
             .print(format!("{gry}{}: Indexing...{rst}", self.display_name));
     }
 
-    pub fn scan_done(&mut self, s: &ScanStats) {
-        self.expected_files_count = s.scheduled_files_count;
-        self.expected_size = s.scheduled_size;
-        let skipped_info = if s.skipped_files > 0 || s.skipped_folders > 0 {
+    pub fn scan_done(&mut self, scheduled: Count, skipped_files: Count, skipped_folders: Count) {
+        self.expected = scheduled;
+        let skipped_info = if skipped_files.files > 0 || skipped_folders.files > 0 {
             format!(
                 "   (skipped {} files, {} dirs)",
-                s.skipped_files, s.skipped_folders,
+                skipped_files.files, skipped_folders.files,
             )
         } else {
             "".to_string()
@@ -71,8 +68,8 @@ impl<P: Printer> Progress<P> {
         self.printer.print(format!(
             "\r{gry}{}: Indexed:     {: >f$} files  {: >7}{}{rst}\n",
             self.display_name,
-            dec(self.expected_files_count as i128),
-            size_human(s.scheduled_size),
+            dec(self.expected.files as i128),
+            size_human(self.expected.size),
             skipped_info,
             f = self.files_display_length(),
         ));
@@ -80,8 +77,8 @@ impl<P: Printer> Progress<P> {
     }
 
     pub fn process_inc(&mut self, files_added: u64, bytes_added: SizeBytes) {
-        self.current_files_count += files_added;
-        self.current_size += bytes_added;
+        self.current.files += files_added;
+        self.current.size += bytes_added;
         self.bytes_since_last_trigger += bytes_added;
         let elapsed_ms = self.last_trigger.elapsed().as_millis();
         if self.initialised != self.last_trigger && elapsed_ms < 666 {
@@ -113,9 +110,9 @@ impl<P: Printer> Progress<P> {
         self.printer.print(format!(
             "\r{}{gry}Processing:  {: >f$} files  {: >7}   {: >5}    {: >3}   {}{rst} ",
             indent,
-            dec(self.current_files_count as i128),
-            size_human(self.current_size),
-            percent(self.current_size, self.expected_size),
+            dec(self.current.files as i128),
+            size_human(self.current.size),
+            percent(self.current.size, self.expected.size),
             duration_human(self.initialised.elapsed().as_secs()),
             rate,
             f = self.files_display_length(),
@@ -127,8 +124,8 @@ impl<P: Printer> Progress<P> {
         let extra_padding = 1000;
         let count = self
             .previous_files_count
-            .map(|c| c + extra_padding)
-            .unwrap_or(self.expected_files_count + extra_padding);
+            .map(|c| c.files + extra_padding)
+            .unwrap_or(self.expected.files + extra_padding);
         return dec(count as i128).len();
     }
 }
