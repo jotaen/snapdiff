@@ -1,5 +1,6 @@
 use crate::error::Error;
 use crate::file::SizeBytes;
+use crate::printer::TerminalPrinter;
 use crate::progress::Progress;
 use crate::report::ScanStats;
 use crate::snapper::{open_file, CHUNK_SIZE};
@@ -18,7 +19,7 @@ impl DirIterator {
     pub fn scan(
         num_workers: usize,
         root: &path::Path,
-        progress: &mut Progress,
+        progress: &mut Progress<TerminalPrinter>,
     ) -> Result<DirIterator, Error> {
         progress.scan_start();
         let mut dir_it = DirIterator {

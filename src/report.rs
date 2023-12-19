@@ -1,6 +1,6 @@
 use crate::file::SizeBytes;
 use crate::format::{dec, dec_signed};
-use crate::printer::{FilePrinter, TerminalPrinter, SNP1, SNP2};
+use crate::printer::{Colours, Printer, TerminalPrinter, SNP1, SNP2};
 use crate::stats;
 use stats::Stats;
 
@@ -38,7 +38,7 @@ impl Report {
         };
     }
 
-    pub fn detailed_list(&self, printer: FilePrinter) {
+    pub fn detailed_list(&self, printer: &mut dyn Printer) {
         printer.print(format!(
             "=idn {} ({} files)\n",
             self.total_snap_2.size, self.total_snap_2.files_count
@@ -92,7 +92,7 @@ impl Report {
                 dec_signed(delta)
             }
         };
-        let TerminalPrinter {
+        let Colours {
             blank: ___,
             dark: drk,
             yellow: ylw,
@@ -104,7 +104,7 @@ impl Report {
             reset: rst,
             bold: bld,
             ..
-        } = printer;
+        } = printer.colours;
         printer.print(format!(
             "
 {bld}            {___}{___}            {: >f$}     {: >b$}{rst}

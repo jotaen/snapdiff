@@ -1,13 +1,13 @@
 use crate::checksum::CheckSummer;
 use crate::cli::CtrlCSignal;
 use crate::dir_iter::DirIterator;
+use crate::printer::TerminalPrinter;
 use crate::progress::Progress;
 use crate::snapshot::Snapshot;
 use crate::{file, Error};
 use file::File;
 use std::io::BufRead;
 use std::ops::DerefMut;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::{fs, io, path, thread};
@@ -16,18 +16,23 @@ pub const CHUNK_SIZE: u64 = 1024 * 1024 * 10; // ~10MB
 
 pub struct Snapper {
     num_workers: usize,
-    ctrl_csignal: CtrlCSignal,
+    ctrlc_signal: CtrlCSignal,
 }
 
 impl Snapper {
-    pub fn new(num_workers: usize, ctrl_csignal: CtrlCSignal) -> Snapper {
+    pub fn new(num_workers: usize, ctrlc_signal: CtrlCSignal) -> Snapper {
         return Snapper {
             num_workers,
-            ctrl_csignal,
+            ctrlc_signal,
         };
     }
 
-    pub fn process<S>(&self, dir_it: DirIterator, snap: S, progress: Progress) -> Result<S, Error>
+    pub fn process<S>(
+        &self,
+        dir_it: DirIterator,
+        snap: S,
+        progress: Progress<TerminalPrinter>,
+    ) -> Result<S, Error>
     where
         S: Snapshot + std::fmt::Debug + Send + 'static,
     {
@@ -41,7 +46,7 @@ impl Snapper {
                 Arc::clone(&dir_it_arc),
                 Arc::clone(&snap_arc),
                 Arc::clone(&progress_arc),
-                Arc::clone(&self.ctrl_csignal),
+                self.ctrlc_signal.clone(),
             );
             handles.push(handle);
         }
@@ -63,8 +68,8 @@ impl Snapper {
 fn spawn_worker<S>(
     dir_it_mtx: Arc<Mutex<DirIterator>>,
     snap_mtx: Arc<Mutex<S>>,
-    progress_mtx: Arc<Mutex<Progress>>,
-    ctrlc_mtx: Arc<AtomicBool>,
+    progress_mtx: Arc<Mutex<Progress<TerminalPrinter>>>,
+    ctrl_c: CtrlCSignal,
 ) -> JoinHandle<Result<(), Error>>
 where
     S: Snapshot + std::fmt::Debug + Send + 'static,
@@ -94,7 +99,7 @@ where
             let mut size_bytes: file::SizeBytes = 0;
             let mut checksummer = CheckSummer::new();
             loop {
-                if ctrlc_mtx.load(Ordering::SeqCst) {
+                if ctrl_c.has_triggered() {
                     println!();
                     std::process::exit(255);
                 }

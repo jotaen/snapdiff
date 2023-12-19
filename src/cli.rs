@@ -6,6 +6,30 @@ use std::sync::Arc;
 use std::thread;
 use std::{fs, path};
 
+pub struct Cli {
+    pub snap1: path::PathBuf,
+    pub snap2: path::PathBuf,
+    pub workers1: usize,
+    pub workers2: usize,
+    pub terminal_printer: TerminalPrinter,
+    pub file_printer: Option<FilePrinter>,
+    pub ctrl_c: CtrlCSignal,
+}
+
+pub struct CtrlCSignal(Arc<AtomicBool>);
+
+impl Clone for CtrlCSignal {
+    fn clone(&self) -> Self {
+        return CtrlCSignal(Arc::clone(&self.0));
+    }
+}
+
+impl CtrlCSignal {
+    pub fn has_triggered(&self) -> bool {
+        return self.0.load(Ordering::SeqCst);
+    }
+}
+
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
@@ -13,21 +37,20 @@ struct Args {
     snap2_path: String,
 
     #[arg(
-        long = "workers",
-        alias = "worker",
-        short = 'w',
-        value_delimiter = ':',
-        help = "Number of CPU cores to utilise"
-    )]
-    workers: Option<Vec<usize>>,
-
-    #[arg(
         long = "report",
         alias = "report-file",
         short = 'r',
         help = "Print detailed report to file"
     )]
-    report_file: String,
+    report_file: Option<String>,
+
+    #[arg(
+        long = "workers",
+        alias = "worker",
+        value_delimiter = ':',
+        help = "Number of CPU cores to utilise"
+    )]
+    workers: Option<Vec<usize>>,
 
     #[arg(
         long = "no-color",
@@ -37,18 +60,6 @@ struct Args {
     )]
     no_color: bool,
 }
-
-pub struct Cli {
-    pub snap1: path::PathBuf,
-    pub snap2: path::PathBuf,
-    pub workers1: usize,
-    pub workers2: usize,
-    pub terminal_printer: TerminalPrinter,
-    pub file_printer: FilePrinter,
-    pub ctrl_c: CtrlCSignal,
-}
-
-pub type CtrlCSignal = Arc<AtomicBool>;
 
 impl Cli {
     pub fn new_from_env() -> Result<Cli, Error> {
@@ -64,32 +75,35 @@ impl Cli {
             } else {
                 TerminalPrinter::new()
             },
-            file_printer: {
-                let p = path::Path::new(&args.report_file);
+            file_printer: if args.report_file.is_none() {
+                None
+            } else {
+                let f = &args.report_file.unwrap();
+                let p = path::Path::new(f);
                 if p.exists() {
                     return Err(Error::new(format!(
                         "report file already exists: {}",
                         p.display()
                     )));
                 }
-                FilePrinter::new(p)?
+                Some(FilePrinter::new(p)?)
             },
             ctrl_c: {
-                let ctrlc_arc = Arc::new(AtomicBool::new(false));
-                let r = ctrlc_arc.clone();
+                let ctrl_c = Arc::new(AtomicBool::new(false));
+                let c_arc = Arc::clone(&ctrl_c);
                 ctrlc::set_handler(move || {
-                    r.store(true, Ordering::SeqCst);
+                    c_arc.store(true, Ordering::SeqCst);
                 })
                 .map_err(|e| {
                     Error::from("failed to register ^C handler".to_string(), e.to_string())
                 })?;
-                ctrlc_arc
+                CtrlCSignal(ctrl_c)
             },
         });
     }
 }
 
-pub fn num_workers(ws: Option<Vec<usize>>) -> (usize, usize) {
+fn num_workers(ws: Option<Vec<usize>>) -> (usize, usize) {
     let cores = thread::available_parallelism().unwrap().get();
     return ws
         .map(|ws| {

@@ -44,7 +44,8 @@ fn run() -> Result<(), Error> {
     };
 
     report.summary(cli.terminal_printer);
-    report.detailed_list(cli.file_printer);
+    cli.file_printer
+        .map(|mut printer| report.detailed_list(&mut printer));
     return Ok(());
 }
 

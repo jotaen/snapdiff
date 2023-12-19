@@ -1,14 +1,15 @@
 use crate::file::SizeBytes;
 use crate::format::{dec, duration_human, percent, size_human};
-use crate::printer::TerminalPrinter;
+use crate::printer::{Colours, Printer};
 use crate::report::ScanStats;
+use std::fmt::Debug;
 use std::io;
 use std::io::Write;
 use std::time::Instant;
 
 #[derive(Debug)]
-pub struct Progress {
-    printer: TerminalPrinter,
+pub struct Progress<P: Printer> {
+    printer: P,
     display_name: &'static str,
     initialised: Instant,
     last_trigger: Instant,
@@ -20,12 +21,12 @@ pub struct Progress {
     previous_files_count: Option<u64>,
 }
 
-impl Progress {
+impl<P: Printer> Progress<P> {
     pub fn new(
-        printer: TerminalPrinter,
+        printer: P,
         display_name: &'static str,
         previous_files_count: Option<u64>,
-    ) -> Progress {
+    ) -> Progress<P> {
         let init = Instant::now();
         return Progress {
             printer,
@@ -42,11 +43,11 @@ impl Progress {
     }
 
     pub fn scan_start(&mut self) {
-        let TerminalPrinter {
+        let Colours {
             gray: gry,
             reset: rst,
             ..
-        } = self.printer;
+        } = self.printer.colours();
         self.printer
             .print(format!("{gry}{}: Indexing...{rst}", self.display_name));
     }
@@ -62,11 +63,11 @@ impl Progress {
         } else {
             "".to_string()
         };
-        let TerminalPrinter {
+        let Colours {
             gray: gry,
             reset: rst,
             ..
-        } = self.printer;
+        } = self.printer.colours();
         self.printer.print(format!(
             "\r{gry}{}: Indexed:     {: >f$} files  {: >7}{}{rst}\n",
             self.display_name,
@@ -104,11 +105,11 @@ impl Progress {
 
     fn print_process(&mut self, rate: String) {
         let indent = " ".repeat(self.display_name.len() + 2);
-        let TerminalPrinter {
+        let Colours {
             gray: gry,
             reset: rst,
             ..
-        } = self.printer;
+        } = self.printer.colours();
         self.printer.print(format!(
             "\r{}{gry}Processing:  {: >f$} files  {: >7}   {: >5}    {: >3}   {}{rst} ",
             indent,
