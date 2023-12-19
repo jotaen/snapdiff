@@ -1,8 +1,8 @@
 use crate::error::Error;
 use crate::file::SizeBytes;
+use crate::filter::Filter;
 use crate::printer::TerminalPrinter;
 use crate::progress::Progress;
-use crate::skipped::Skipped;
 use crate::snapper::{open_file, CHUNK_SIZE};
 use crate::stats::Stats;
 use std::cmp::Ordering;
@@ -13,7 +13,7 @@ pub struct DirIterator {
     small_files: PathList,
     pub root: path::PathBuf,
     pub scheduled: Stats,
-    skipped: Skipped,
+    filters: Filter,
     num_workers: usize,
 }
 
@@ -21,7 +21,7 @@ impl DirIterator {
     pub fn scan(
         num_workers: usize,
         root: &path::Path,
-        skipped: Skipped,
+        filters: Filter,
         progress: &mut Progress<TerminalPrinter>,
     ) -> Result<DirIterator, Error> {
         progress.scan_start();
@@ -30,7 +30,7 @@ impl DirIterator {
             large_files: PathList::new(),
             small_files: PathList::new(),
             scheduled: Stats::new(),
-            skipped,
+            filters,
             num_workers,
         };
         dir_it.scan_dir(root)?;
@@ -45,8 +45,8 @@ impl DirIterator {
         });
         progress.scan_done(
             dir_it.scheduled.count,
-            dir_it.skipped.files,
-            dir_it.skipped.folders,
+            dir_it.filters.skipped_files,
+            dir_it.filters.skipped_folders,
         );
         return Ok(dir_it);
     }
@@ -56,7 +56,7 @@ impl DirIterator {
             return Err(Error::new(format!("not a directory: {}", path.display())));
         }
         let read_dir_result = fs::read_dir(path).map_err(|e| {
-            self.skipped.record_file();
+            self.filters.track_skipped_file(1);
             return Error::from(
                 format!("cannot read directory: {}", path.display()),
                 e.to_string(),
@@ -74,7 +74,8 @@ impl DirIterator {
                     );
                 })
                 .map(|r| (r.path(), r.file_name()))?;
-            if self.skipped.record_if_match(&p, &name) {
+            if self.filters.is_filtered(&p, &name) {
+                self.filters.track_skipped(&p);
                 continue;
             }
             if p.is_dir() {
@@ -86,7 +87,7 @@ impl DirIterator {
                         self.push(p, m.len());
                     })
                     .unwrap_or_else(|_| {
-                        self.skipped.record_folder();
+                        self.filters.track_skipped_folder(1);
                     });
             }
         }
