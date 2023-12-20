@@ -120,3 +120,13 @@ impl Printer for MockPrinter {
         return &NO_COLOURS;
     }
 }
+
+impl MockPrinter {
+    pub fn new() -> MockPrinter {
+        return MockPrinter{sink: "".to_string()};
+    }
+
+    pub fn flush(&mut self) -> String {
+        return std::mem::replace(&mut self.sink, "".to_string());
+    }
+}
