@@ -39,8 +39,8 @@ struct Args {
     snap2_path: String,
 
     #[arg(
-        long = "report",
-        alias = "report-file",
+        long = "report-file",
+        alias = "report",
         short = 'r',
         help = "Print detailed report to file"
     )]

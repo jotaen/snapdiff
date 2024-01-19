@@ -132,11 +132,11 @@ impl<P: Printer> Progress<P> {
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Sub;
-    use std::time::{Duration, Instant};
     use crate::printer::MockPrinter;
     use crate::progress::Progress;
     use crate::stats::Count;
+    use std::ops::Sub;
+    use std::time::{Duration, Instant};
 
     #[test]
     fn print_process() {
@@ -150,24 +150,36 @@ mod tests {
             c
         };
         progress.scan_done(count, Count::new(), Count::new());
-        assert_eq!(progress.printer.flush(), "\rSnap: Indexed:     61,772 files   57.7 M\n");
+        assert_eq!(
+            progress.printer.flush(),
+            "\rSnap: Indexed:     61,772 files   57.7 M\n"
+        );
         progress.process_inc(182, 75913);
-        assert_eq!(progress.printer.flush(), "\r      Processing:     182 files   75.9 K     0 %     0s   ");
+        assert_eq!(
+            progress.printer.flush(),
+            "\r      Processing:     182 files   75.9 K     0 %     0s   "
+        );
         progress.last_trigger = Instant::now().sub(Duration::from_millis(600));
         assert_eq!(progress.printer.flush(), "");
         progress.last_trigger = Instant::now().sub(Duration::from_millis(700));
         progress.process_inc(8172, 1312425);
-        assert_eq!(progress.printer.flush(), "\r      Processing:   8,354 files    1.3 M     2 %     0s   [  1.8 M/s]");
+        assert_eq!(
+            progress.printer.flush(),
+            "\r      Processing:   8,354 files    1.3 M     2 %     0s   [  1.8 M/s]"
+        );
         progress.process_inc(53418, 56329955);
         progress.process_done();
-        assert_eq!(progress.printer.flush(), "\r      Processing:  61,772 files   57.7 M   100 %     0s              \n");
+        assert_eq!(
+            progress.printer.flush(),
+            "\r      Processing:  61,772 files   57.7 M   100 %     0s              \n"
+        );
     }
 
     #[test]
     fn print_process_with_alignment() {
         let p = MockPrinter::new();
         let previous = {
-            let mut c =Count::new();
+            let mut c = Count::new();
             c.add(158176, 1902);
             c
         };
@@ -180,6 +192,9 @@ mod tests {
             c
         };
         progress.scan_done(count, Count::new(), Count::new());
-        assert_eq!(progress.printer.flush(), "\rSnap: Indexed:           3 files    910 B\n");
+        assert_eq!(
+            progress.printer.flush(),
+            "\rSnap: Indexed:           3 files    910 B\n"
+        );
     }
 }

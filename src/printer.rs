@@ -123,7 +123,9 @@ impl Printer for MockPrinter {
 
 impl MockPrinter {
     pub fn new() -> MockPrinter {
-        return MockPrinter{sink: "".to_string()};
+        return MockPrinter {
+            sink: "".to_string(),
+        };
     }
 
     pub fn flush(&mut self) -> String {
