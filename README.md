@@ -5,6 +5,8 @@ snapdiff can compare two snapshots of a directory tree, which have been captured
 It diffs the two snapshots, and summarizes how many files are identical, and how many have been moved, modified, added, or deleted.
 That way, you get a high-level insight into how the data evolved between both snapshots.
 
+Learn more in [this blog post](https://www.jotaen.net/iE3XC).
+
 ### Example
 
 Say, you want to compare two snapshots, one taken at 2023-09-01, and another one taken at 2023-10-01:
@@ -34,7 +36,21 @@ The categories are defined as:
 
 ## Usage
 
-### `--report`, `-r`
+```
+snapdiff
+    [--report PATH]
+    [--include-dot-paths]
+    [--include-symlinks]
+    [--workers N] OR [--workers N1:N2]
+    [--no-color]
+    SNAP1 SNAP2
+```
+
+`SNAP1` and `SNAP2` are in “chronological” order, so snapshot 1 is assumed to precede snapshot 2.
+
+See also `snapdiff --help` for info.
+
+### `--report PATH`
 
 Example: `--report ./my-report.txt`
 
@@ -50,7 +66,7 @@ Include files and folders whose name start with a dot (`.`), instead of ignoring
 
 Resolve symlinks, instead of ignoring them (which is the default).
 
-### `--workers`
+### `--workers N`
 
 Example: `--workers 4` or `--workers 1:8`
 
@@ -58,7 +74,7 @@ The number of workers (CPU cores) to utilize.
 
 `0` means that it detects the number of available CPU cores automatically (which is the default).
 
-You can use two different values, separated by a colon (`:`), to differentiate between the first and the second snapshot.
+You can specify two different values, separated by a colon (`:`), to differentiate between the first and the second snapshot.
 
 ### `--no-color`
 

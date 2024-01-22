@@ -38,11 +38,7 @@ struct Args {
     snap1_path: String,
     snap2_path: String,
 
-    #[arg(
-        long = "report",
-        short = 'r',
-        help = "Print a detailed report to file"
-    )]
+    #[arg(long = "report", short = 'r', help = "Print a detailed report to file")]
     report_file: Option<String>,
 
     #[arg(

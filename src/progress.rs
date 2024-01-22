@@ -16,7 +16,6 @@ pub struct Progress<P: Printer> {
     bytes_since_last_trigger: SizeBytes,
     current: Count,
     expected: Count,
-    skipped: Count,
     previous_files_count: Option<Count>,
 }
 
@@ -35,7 +34,6 @@ impl<P: Printer> Progress<P> {
             bytes_since_last_trigger: 0,
             current: Count::new(),
             expected: Count::new(),
-            skipped: Count::new(),
             previous_files_count,
         };
     }

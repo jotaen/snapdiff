@@ -106,7 +106,6 @@ impl Printer for FilePrinter {
     }
 }
 
-#[allow(dead_code)]
 pub struct MockPrinter {
     sink: String,
 }
@@ -121,6 +120,7 @@ impl Printer for MockPrinter {
     }
 }
 
+#[allow(dead_code)]
 impl MockPrinter {
     pub fn new() -> MockPrinter {
         return MockPrinter {

@@ -31,8 +31,16 @@ impl Report {
 
     pub fn detailed_list(&self, printer: &mut dyn Printer) {
         printer.print(format!(
-            "=idn {} ({} files)\n",
+            "#sn1 {} ({} files)\n",
+            self.total_snap_1.count.size, self.total_snap_1.count.files
+        ));
+        printer.print(format!(
+            "#sn2 {} ({} files)\n",
             self.total_snap_2.count.size, self.total_snap_2.count.files
+        ));
+        printer.print(format!(
+            "=idn {} ({} files)\n",
+            self.identical.count.size, self.identical.count.files
         ));
         for f in self.moved.files().unwrap() {
             printer.print(format!(">mvd {} {}\n", f.size, f.path.display()));
