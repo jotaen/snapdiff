@@ -18,6 +18,8 @@ pub struct DirIterator {
 }
 
 impl DirIterator {
+    // Traverses the `root` directory recursively, and collects all
+    // encountered files (except the ones that are filtered out).
     pub fn scan(
         num_workers: usize,
         root: &path::Path,
@@ -34,6 +36,9 @@ impl DirIterator {
             num_workers,
         };
         dir_it.scan_dir(root)?;
+
+        // Only sort the “large” files, because for the “small” ones
+        // the order doesn’t matter (as they fit into one chunk anyway).
         dir_it.large_files.paths.sort_by(|(_, s1), (_, s2)| {
             return if s1 > s2 {
                 Ordering::Less
@@ -96,6 +101,11 @@ impl DirIterator {
 
     fn push(&mut self, p: path::PathBuf, size: SizeBytes) {
         self.scheduled.count.add(1, size);
+
+        // Sort into “small” and “large” internally files. That way, the “large”
+        // files are consumed (hashed) first. This avoids the scenario, where one
+        // worker is left over hashing a large file towards the end, when there are
+        // no files left for other workers to pick up anymore.
         if size > CHUNK_SIZE && self.num_workers > 1 {
             self.large_files.paths.push((p.to_path_buf(), size));
         } else {
@@ -108,6 +118,7 @@ impl DirIterator {
     }
 }
 
+// An iterable list of file paths.
 struct PathList {
     paths: Vec<(path::PathBuf, u64)>,
     it: usize,

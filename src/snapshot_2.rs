@@ -13,6 +13,8 @@ pub struct Snapshot2 {
 }
 
 impl Snapshot for Snapshot2 {
+    // For each added file, compare it with snapshot 1. If it’s not
+    // known in snapshot 1, store it in an internal remainder list.
     fn add(&mut self, f2: File) {
         self.report.total_snap_2.record(&f2);
         self.snap_1
@@ -41,6 +43,7 @@ impl Snapshot2 {
         };
     }
 
+    // Processes all remaining files, both from snapshot 1 and snapshot 2.
     pub fn conclude(&mut self) -> Report {
         let (total1, mut snap_1_remainder) = self.snap_1.conclude();
         self.report.total_snap_1 = total1;

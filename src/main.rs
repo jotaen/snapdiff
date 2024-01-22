@@ -27,6 +27,7 @@ use std::process;
 fn run() -> Result<(), Error> {
     let cli = Cli::new_from_env()?;
 
+    // Process snapshot 1.
     let snap1 = {
         let mut progress1 = Progress::new(cli.terminal_printer, SNP1, None);
         let dir_it1 =
@@ -36,6 +37,7 @@ fn run() -> Result<(), Error> {
         snapper1.process(dir_it1, snap1, progress1)?
     };
 
+    // Process snapshot 2.
     let report = {
         let mut progress2 = Progress::new(cli.terminal_printer, SNP2, Some(snap1.total().count));
         let dir_it2 =
@@ -45,6 +47,7 @@ fn run() -> Result<(), Error> {
         snapper2.process(dir_it2, snap2, progress2)?.conclude()
     };
 
+    // Print report.
     report.summary(cli.terminal_printer);
     cli.file_printer
         .map(|mut printer| report.detailed_list(&mut printer));

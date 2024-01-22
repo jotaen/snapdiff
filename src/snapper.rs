@@ -27,6 +27,8 @@ impl Snapper {
         };
     }
 
+    // Feeds files from the `DirIterator` to the `Snapshot` for processing.
+    // The file hashes are computed in parallel. Progress is updated continuously.
     pub fn process<S>(
         &self,
         dir_it: DirIterator,

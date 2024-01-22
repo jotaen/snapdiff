@@ -35,6 +35,9 @@ impl Snapshot1 {
         };
     }
 
+    // Processes a file from snapshot 2, and checks whether there is
+    // a matching file in snapshot 1. If so, the file is removed from
+    // the internal lookup table.
     pub fn digest(&mut self, f2: &File) -> Option<(Comparison, File)> {
         return self.files_by_path.remove(&f2.path).map(|f1| {
             if f1.equals(&f2) {
@@ -49,6 +52,8 @@ impl Snapshot1 {
         return &self.total;
     }
 
+    // Processes the remainder of the internal lookup table, and puts
+    // all remaining files into a lookup table “by checksums”.
     pub fn conclude(&mut self) -> (Stats, FilesByChecksums) {
         let mut files_by_hash: FilesByChecksums = FilesByChecksums::new();
 

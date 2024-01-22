@@ -1,28 +1,46 @@
 # snapdiff
 
-snapdiff compares two snapshots of a directory tree, which were taken at different times, and summarises the difference between them. I.e., how many files have moved, modified, added, or deleted.
+snapdiff can compare two snapshots of a directory tree, which have been captured at different points in time.
+(Think of a “snapshot” as a backup of the original directory tree, in the sense of a full copy.)
+It diffs the two snapshots, and summarizes how many files are identical, and how many have been moved, modified, added, or deleted.
+That way, you get a high-level insight into how the data evolved between both snapshots.
+
+### Example
+
+Say, you want to compare two snapshots, one taken at 2023-09-01, and another one taken at 2023-10-01:
 
 ```
-$ snapdiff my-backups/2023-05-01 my-backups/2023-06-01
-                         FILES         BYTES
+$ snapdiff 2023-09-01/ 2023-10-01/
 
-TOTAL       Before      28.372   137.295.441
-            After       28.405   138.481.078
-
-OF WHICH    Unchanged   26.511   122.670.012
-            Moved            3        19.523
-            Added           23        26.288
-            Deleted          1         4.677
-            Modified     1.039        12.004 (+3.512)
+                           FILES             BYTES
+                                     G   M   K   B
+TOTAL       Snap 1        87,243    98,407,188,994
+            Snap 2        87,319    98,591,738,372
+            
+OF WHICH    Identical     87,134    97,551,550,976
+            Moved             38       134,217,728
+            Added             87       234,881,024
+            Deleted           11        50,331,648
+            Modified         147       671,088,644 (+282,172)
 ```
+
+The categories are defined as:
+
+- **Identical**: both snapshots contain a file at the same path with the same contents.
+- **Moved**: both snapshots contain a file with the same contents, but at different paths.
+- **Added**: the second snapshot contains a file whose path or contents is not present in the first snapshot.
+- **Deleted**: the first snapshot contains a file whose path or contents is not present in the second snapshot.
+- **Modified**: both snapshots contain a file at the same path, but with different contents.
 
 ## Usage
 
-### `--report-file`, `-r`
+### `--report`, `-r`
 
-Example: `--report-file ./my-report.txt`
+Example: `--report ./my-report.txt`
 
 Print a detailed report to a file.
+
+The file will be newly created, so it fails if a file already exists at the target path. 
 
 ### `--include-dot-paths`
 
@@ -36,11 +54,11 @@ Resolve symlinks, instead of ignoring them (which is the default).
 
 Example: `--workers 4` or `--workers 1:8`
 
-The number of workers (CPU kernels) to utilize.
+The number of workers (CPU cores) to utilize.
 
-`0` means that it detects the number of available cores automatically (which is the default).
+`0` means that it detects the number of available CPU cores automatically (which is the default).
 
-You can use two different values, separated by a colon (`:`), to differentiate for the first and the second snapshot.
+You can use two different values, separated by a colon (`:`), to differentiate between the first and the second snapshot.
 
 ### `--no-color`
 
@@ -50,8 +68,8 @@ Print output in plain text, without colouring.
 
 Prerequisites: Rust toolchain (see [`Cargo.toml`](./Cargo.toml) for required version).
 
-Build with `cargo build`.
+Compile via `cargo build`. (Produces binary to `target/debug/snapdiff`.)
 
 ## About
 
-snapdiff was created by [Jan Heuermann](https://www.jotaen.net), and is available under the terms of the [MIT license](./LICENSE).
+snapdiff was created by [Jan Heuermann](https://www.jotaen.net). The sources are available under the terms of the [MIT license](./LICENSE).
