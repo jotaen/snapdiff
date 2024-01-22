@@ -1,0 +1,24 @@
+name: CI
+on: push
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build # I.e., verify that it compiles.
+        run: |
+          . run.sh
+          run::build
+      - name: Run tests
+        run: |
+          . run.sh
+          run::test
+      - name: Check formatting
+        run: |
+          . run.sh
+          run::format
+          if [[ "$(git status --porcelain)" ]]; then 
+            git status # Print diff.
+            exit 1
+          fi
