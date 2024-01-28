@@ -32,42 +32,79 @@ impl CtrlCSignal {
     }
 }
 
+/// snapdiff compares two snapshots of a directory tree, captured at different points
+/// in time. That way, it gives a high-level insight into how the directory tree has
+/// evolved over time. It summarises the difference between both snapshots based on
+/// the following categories:
+/// - Identical: both snapshots contain a file at the same path with the same contents.
+/// - Moved:     both snapshots contain a file with the same contents, but at different
+///              paths.
+/// - Added:     the second snapshot contains a file whose path or contents is not
+///              present in the first snapshot.
+/// - Deleted:   the first snapshot contains a file whose path or contents is not
+///              present in the second snapshot.
+/// - Modified:  both snapshots contain a file at the same path, but with different
+///              contents.
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version, about, long_about = None, verbatim_doc_comment)]
 struct Args {
+    /// Path to the first snapshot (the older one).
+    #[arg(verbatim_doc_comment)]
     snap1_path: String,
+
+    /// Path to the second snapshot (the more recent one).
+    #[arg(verbatim_doc_comment)]
     snap2_path: String,
 
-    #[arg(long = "report", short = 'r', help = "Print a detailed report to file")]
+    /// Print a detailed report to a file. The report lists
+    /// all captured file names (one per line, for all but
+    /// identical files).
+    #[arg(long = "report", short = 'r', verbatim_doc_comment)]
     report_file: Option<String>,
 
+    /// Include files or folders whose name start with a dot,
+    /// instead of ignoring them (which is the default). For
+    /// dot-folders, it ignores the entire (sub-)directory
+    /// tree, with all files and folders it may contain.
     #[arg(
         long = "include-dot-paths",
+        short = 'd',
         default_value_t = false,
-        help = "Ignore files or folders that start with a dot"
+        verbatim_doc_comment
     )]
     include_dot_paths: bool,
 
+    /// Include symlinks, instead of ignoring them (which is
+    /// the default). If symlinks are included, it counts one
+    /// file per symlink, without increasing the byte count.
+    /// If the symlink target had been changed between snapshots,
+    /// it counts the symlink file as modified.
     #[arg(
         long = "include-symlinks",
+        short = 's',
         default_value_t = false,
-        help = "Ignore paths that are symlinks"
+        verbatim_doc_comment
     )]
     include_symlinks: bool,
 
+    /// Number of CPU cores to utilise. A value of `0` means
+    /// that all available cores are maxed out (which is the
+    /// default). The value can be distinguished for each
+    /// snapshot side via a colon, e.g. `1:4`.
     #[arg(
         long = "workers",
         alias = "worker",
         value_delimiter = ':',
-        help = "Number of CPU cores to utilise"
+        verbatim_doc_comment
     )]
     workers: Option<Vec<usize>>,
 
+    /// Disable output colouring.
     #[arg(
         long = "no-color",
         alias = "no-colour",
         default_value_t = false,
-        help = "Disable colouring of output"
+        verbatim_doc_comment
     )]
     no_color: bool,
 }

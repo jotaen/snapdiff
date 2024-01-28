@@ -1,3 +1,4 @@
+use crate::dir_iter::SkippedStats;
 use crate::file::SizeBytes;
 use crate::format::{dec, duration_human, percent, size_human};
 use crate::printer::{Colours, Printer};
@@ -48,15 +49,32 @@ impl<P: Printer> Progress<P> {
             .print(format!("{gry}{}: Indexing...{rst}", self.display_name));
     }
 
-    pub fn scan_done(&mut self, scheduled: Count, skipped_files: Count, skipped_folders: Count) {
+    pub fn scan_done(&mut self, scheduled: Count, skipped: SkippedStats) {
         self.expected = scheduled;
-        let skipped_info = if skipped_files.files > 0 || skipped_folders.files > 0 {
-            format!(
-                "   (skipped {} files, {} dirs)",
-                skipped_files.files, skipped_folders.files,
-            )
-        } else {
-            "".to_string()
+        let skipped_info = {
+            let text = vec![
+                (skipped.dot_paths, "dot-path"),
+                (skipped.symlinks, "symlink"),
+                (skipped.no_opener, "unopenable path"),
+            ]
+            .iter()
+            .filter(|(c, _)| *c > 0)
+            .map(|(c, label)| {
+                format!(
+                    "{} {}{}",
+                    dec(*c as i128),
+                    label,
+                    if *c == 1 { "" } else { "s" }
+                )
+                .to_string()
+            })
+            .reduce(|acc, s| format!("{acc}, {s}"))
+            .unwrap_or_default();
+            if !text.is_empty() {
+                format!("   (Skipped: {})", text).to_string()
+            } else {
+                text
+            }
         };
         let Colours {
             gray: gry,
@@ -130,6 +148,7 @@ impl<P: Printer> Progress<P> {
 
 #[cfg(test)]
 mod tests {
+    use crate::dir_iter::SkippedStats;
     use crate::printer::MockPrinter;
     use crate::progress::Progress;
     use crate::stats::Count;
@@ -147,7 +166,7 @@ mod tests {
             c.add(61772, 57718293);
             c
         };
-        progress.scan_done(count, Count::new(), Count::new());
+        progress.scan_done(count, SkippedStats::new());
         assert_eq!(
             progress.printer.flush(),
             "\rSnap: Indexed:     61,772 files   57.7 M\n"
@@ -174,6 +193,43 @@ mod tests {
     }
 
     #[test]
+    fn print_scan_done() {
+        let p = MockPrinter::new();
+        let mut progress = Progress::new(p, "Snap", None);
+        let mut skipped = SkippedStats::new();
+        let mut count = Count::new();
+
+        count.add(12345, 999888);
+        progress.scan_done(count, skipped);
+        assert_eq!(
+            progress.printer.flush(),
+            "\rSnap: Indexed:     12,345 files  999.8 K\n"
+        );
+
+        skipped.symlinks += 1;
+        progress.scan_done(count, skipped);
+        assert_eq!(
+            progress.printer.flush(),
+            "\rSnap: Indexed:     12,345 files  999.8 K   (Skipped: 1 symlink)\n"
+        );
+        skipped.symlinks += 2222;
+
+        skipped.dot_paths += 4123;
+        progress.scan_done(count, skipped);
+        assert_eq!(
+            progress.printer.flush(),
+            "\rSnap: Indexed:     12,345 files  999.8 K   (Skipped: 4,123 dot-paths, 2,223 symlinks)\n"
+        );
+
+        skipped.no_opener += 9876;
+        progress.scan_done(count, skipped);
+        assert_eq!(
+            progress.printer.flush(),
+            "\rSnap: Indexed:     12,345 files  999.8 K   (Skipped: 4,123 dot-paths, 2,223 symlinks, 9,876 unopenable paths)\n"
+        );
+    }
+
+    #[test]
     fn print_process_with_alignment() {
         let p = MockPrinter::new();
         let previous = {
@@ -189,7 +245,7 @@ mod tests {
             c.add(3, 910);
             c
         };
-        progress.scan_done(count, Count::new(), Count::new());
+        progress.scan_done(count, SkippedStats::new());
         assert_eq!(
             progress.printer.flush(),
             "\rSnap: Indexed:           3 files    910 B\n"
