@@ -1,9 +1,8 @@
 # snapdiff
 
-snapdiff can compare two snapshots of a directory tree, which have been captured at different points in time.
+snapdiff compares two snapshots of a directory tree, captured at different points in time.
 (Think of a “snapshot” as a backup of the original directory tree, in the sense of a full copy.)
-It diffs the two snapshots, and summarizes how many files are identical, and how many have been moved, modified, added, or deleted.
-That way, you get a high-level insight into how the data evolved between both snapshots.
+That way, it gives a high-level insight into how the directory tree has evolved over time.
 
 Learn more in [this blog post](https://www.jotaen.net/iE3XC).
 
@@ -34,6 +33,8 @@ The categories are defined as:
 - **Deleted**: the first snapshot contains a file whose path or contents is not present in the second snapshot.
 - **Modified**: both snapshots contain a file at the same path, but with different contents.
 
+Note: the files count doesn’t include folders.
+
 ## Usage
 
 ```
@@ -46,45 +47,13 @@ snapdiff
     SNAP1 SNAP2
 ```
 
-`SNAP1` and `SNAP2` are in “chronological” order, so snapshot 1 is assumed to precede snapshot 2.
-
-See also `snapdiff --help` for info.
-
-### `--report PATH`
-
-Example: `--report ./my-report.txt`
-
-Print a detailed report to a file.
-
-The file will be newly created, so it fails if a file already exists at the target path. 
-
-### `--include-dot-paths`
-
-Include files and folders whose name start with a dot (`.`), instead of ignoring them (which is the default).
-
-### `--include-symlinks`
-
-Resolve symlinks, instead of ignoring them (which is the default).
-
-### `--workers N`
-
-Example: `--workers 4` or `--workers 1:8`
-
-The number of workers (CPU cores) to utilize.
-
-`0` means that it detects the number of available CPU cores automatically (which is the default).
-
-You can specify two different values, separated by a colon (`:`), to differentiate between the first and the second snapshot.
-
-### `--no-color`
-
-Print output in plain text, without colouring.
+Run `snapdiff --help` for all details.
 
 ## Build from Sources
 
 Prerequisites: Rust toolchain (see [`Cargo.toml`](./Cargo.toml) for required version).
 
-Compile via `cargo build`. (Produces binary to `target/debug/snapdiff`.)
+Compile via `cargo build --release`. (Produces binary to `target/release/snapdiff`.)
 
 ## About
 

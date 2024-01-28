@@ -14,7 +14,7 @@ run::cli() {
 
 # Compile project
 run::build() {
-  cargo build
+  cargo build --release
 }
 
 # Run one of the demo folders

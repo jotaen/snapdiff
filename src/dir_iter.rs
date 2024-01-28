@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::file::SizeBytes;
-use crate::filter::Filter;
+use crate::filter::{Filter, MatchReason};
 use crate::printer::TerminalPrinter;
 use crate::progress::Progress;
 use crate::snapper::{open_file, CHUNK_SIZE};
@@ -14,6 +14,7 @@ pub struct DirIterator {
     pub root: path::PathBuf,
     pub scheduled: Stats,
     filters: Filter,
+    skipped: SkippedStats,
     num_workers: usize,
 }
 
@@ -33,6 +34,7 @@ impl DirIterator {
             small_files: PathList::new(),
             scheduled: Stats::new(),
             filters,
+            skipped: SkippedStats::new(),
             num_workers,
         };
         dir_it.scan_dir(root)?;
@@ -48,11 +50,7 @@ impl DirIterator {
                 Ordering::Equal
             };
         });
-        progress.scan_done(
-            dir_it.scheduled.count,
-            dir_it.filters.skipped_files,
-            dir_it.filters.skipped_folders,
-        );
+        progress.scan_done(dir_it.scheduled.count, dir_it.skipped);
         return Ok(dir_it);
     }
 
@@ -61,7 +59,7 @@ impl DirIterator {
             return Err(Error::new(format!("not a directory: {}", path.display())));
         }
         let read_dir_result = fs::read_dir(path).map_err(|e| {
-            self.filters.track_skipped_file(1);
+            self.skipped.no_opener += 1;
             return Error::from(
                 format!("cannot read directory: {}", path.display()),
                 e.to_string(),
@@ -79,8 +77,16 @@ impl DirIterator {
                     );
                 })
                 .map(|r| (r.path(), r.file_name()))?;
-            if self.filters.is_filtered(&p, &name) {
-                self.filters.track_skipped(&p);
+            let shall_skip = self
+                .filters
+                .matches(&p, &name)
+                .map(|r| match r {
+                    MatchReason::IsSymlink => self.skipped.symlinks += 1,
+                    MatchReason::IsDotPath => self.skipped.dot_paths += 1,
+                })
+                .map(|_| true)
+                .unwrap_or(false);
+            if shall_skip {
                 continue;
             }
             if p.is_dir() {
@@ -92,8 +98,10 @@ impl DirIterator {
                         self.push(p, m.len());
                     })
                     .unwrap_or_else(|_| {
-                        self.filters.track_skipped_folder(1);
+                        self.skipped.no_opener += 1;
                     });
+            } else if p.is_symlink() {
+                self.push(p, 0);
             }
         }
         return Ok(());
@@ -139,5 +147,22 @@ impl PathList {
         let (p, _) = &self.paths[self.it];
         self.it += 1;
         return Some(p.to_path_buf());
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct SkippedStats {
+    pub dot_paths: u64,
+    pub symlinks: u64,
+    pub no_opener: u64,
+}
+
+impl SkippedStats {
+    pub fn new() -> SkippedStats {
+        return SkippedStats {
+            dot_paths: 0,
+            symlinks: 0,
+            no_opener: 0,
+        };
     }
 }
